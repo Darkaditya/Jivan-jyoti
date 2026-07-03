@@ -707,26 +707,40 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyCrEsrikoIG0_iLKfbqfdRwxn8-PyznGTg",
   authDomain: "jivan-jyoti-classes.firebaseapp.com",
-  databaseURL: "REPLACE_WITH_YOUR_REALTIME_DATABASE_URL", // ⚠ Firebase Console > Realtime Database > URL yahan paste karein
+  databaseURL: "https://console.firebase.google.com/u/0/project/jivan-jyoti-classes/database/jivan-jyoti-classes-default-rtdb/data/~2F", // ⚠ Firebase Console > Realtime Database > URL yahan paste karein
   projectId: "jivan-jyoti-classes",
   storageBucket: "jivan-jyoti-classes.firebasestorage.app",
   messagingSenderId: "1033100341219",
   appId: "1:1033100341219:web:46b8db6220c3544d957ad6"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const storage = getStorage(app);
+let app, auth, db, storage, secondaryApp, secondaryAuth;
 
-if(firebaseConfig.databaseURL.includes("REPLACE_WITH")){
-  document.getElementById("loginMsg").style.color = "var(--red)";
-  document.getElementById("loginMsg").textContent = "⚠ Setup incomplete: firebaseConfig.databaseURL abhi tak set nahi hui hai. Firebase Console > Realtime Database se URL copy karke code me daalein.";
+function showFatalSetupError(message){
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  const msgEl = document.getElementById("loginMsg");
+  msgEl.style.color = "var(--red)";
+  msgEl.style.fontWeight = "600";
+  msgEl.textContent = message;
+  document.getElementById("loginForm").querySelector("button[type=submit]").disabled = true;
 }
 
-// secondary app instance — owner naye users banaye to khud logout na ho
-const secondaryApp = initializeApp(firebaseConfig, "Secondary");
-const secondaryAuth = getAuth(secondaryApp);
+if(!firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes("REPLACE_WITH")){
+  showFatalSetupError("⚠ Setup incomplete: firebaseConfig.databaseURL abhi tak set nahi hui hai। Firebase Console > Realtime Database se URL copy karke code me daalein, phir page reload karein।");
+}else{
+  try{
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getDatabase(app);
+    storage = getStorage(app);
+    // secondary app instance — owner naye users banaye to khud logout na ho
+    secondaryApp = initializeApp(firebaseConfig, "Secondary");
+    secondaryAuth = getAuth(secondaryApp);
+  }catch(err){
+    showFatalSetupError("⚠ Firebase se connect nahi ho paya: " + err.message + " — firebaseConfig ki values check karein।");
+  }
+}
 
 /* ---------------------------------------------------------------
    GLOBAL STATE
@@ -833,6 +847,7 @@ $("logoutBtn").addEventListener("click", async ()=>{
   await signOut(auth);
 });
 
+if(auth){
 onAuthStateChanged(auth, async (user)=>{
   if(user){
     // role fetch from /users/{uid}
@@ -860,6 +875,7 @@ onAuthStateChanged(auth, async (user)=>{
   }
   $("loader").style.display="none";
 });
+} // end if(auth)
 
 function applyRoleVisibility(){
   const isOwner = state.role === "Owner";
