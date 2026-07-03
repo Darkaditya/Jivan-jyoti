@@ -1,25 +1,1684 @@
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import ServicesSection from "@/components/ServicesSection";
-import AboutSection from "@/components/AboutSection";
-import GallerySection from "@/components/GallerySection";
-import ReviewsSection from "@/components/ReviewsSection";
-import BookingSection from "@/components/BookingSection";
-import ContactSection from "@/components/ContactSection";
-import Footer from "@/components/Footer";
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jivan Jyoti Classes — Management System</title>
+<link rel="icon" href="data:,">
+<style>
+/* =====================================================================
+   DESIGN TOKENS
+===================================================================== */
+:root{
+  --navy:#16205A; --navy-2:#202C72; --gold:#C9A24B; --saffron:#E8741C;
+  --bg:#F4F2FA; --card:rgba(255,255,255,.65); --card-border:rgba(255,255,255,.5);
+  --ink:#1B1D29; --ink-soft:#5A5E78; --line:#E3E1F0;
+  --green:#1B9E5A; --yellow:#D6A018; --red:#D43F3F;
+  --radius:16px; --shadow:0 14px 34px -18px rgba(22,32,90,.35);
+  --font:'Segoe UI',Roboto,Arial,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0E1228; --card:rgba(28,33,66,.65); --card-border:rgba(255,255,255,.08);
+  --ink:#F0F1FA; --ink-soft:#A6AAC6; --line:#2A3060;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;transition:background .3s,color .3s;}
+img{max-width:100%;display:block;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:8px;}
 
-const Index = () => (
-  <>
-    <Navbar />
-    <HeroSection />
-    <ServicesSection />
-    <AboutSection />
-    <GallerySection />
-    <ReviewsSection />
-    <BookingSection />
-    <ContactSection />
-    <Footer />
-  </>
-);
+.glass{background:var(--card);border:1px solid var(--card-border);backdrop-filter:blur(16px);border-radius:var(--radius);box-shadow:var(--shadow);}
+.hidden{display:none !important;}
 
-export default Index;
+/* =====================================================================
+   LOGIN SCREEN
+===================================================================== */
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 20% 20%, #2A3692, var(--navy) 60%);
+  padding:20px;
+}
+.login-box{width:380px;padding:38px 32px;text-align:center;}
+.login-box img{width:70px;height:70px;border-radius:50%;margin:0 auto 12px;}
+.login-box h1{font-size:1.3rem;color:var(--ink);margin-bottom:2px;}
+.login-box p.sub{color:var(--ink-soft);font-size:.85rem;margin-bottom:22px;}
+.field{text-align:left;margin-bottom:14px;}
+.field label{font-size:.8rem;color:var(--ink-soft);display:block;margin-bottom:4px;}
+.field input,.field select{
+  width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(255,255,255,.5);color:var(--ink);font-size:.95rem;
+}
+[data-theme="dark"] .field input,[data-theme="dark"] .field select{background:rgba(0,0,0,.25);}
+.row-between{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;margin-bottom:16px;}
+.row-between label{display:flex;align-items:center;gap:6px;color:var(--ink-soft);}
+.link-btn{background:none;border:none;color:var(--saffron);font-size:.8rem;text-decoration:underline;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;
+  border-radius:10px;padding:11px 18px;font-weight:600;font-size:.92rem;transition:.2s;
+}
+.btn-primary{background:var(--saffron);color:#fff;width:100%;}
+.btn-primary:hover{background:#cf650f;}
+.btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink);}
+.btn-outline:hover{border-color:var(--saffron);color:var(--saffron);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px;}
+#loginMsg{font-size:.82rem;margin-top:10px;min-height:1.2em;color:var(--red);}
+
+/* =====================================================================
+   APP SHELL
+===================================================================== */
+#app{display:none;min-height:100vh;grid-template-columns:240px 1fr;}
+#app.show{display:grid;}
+.sidebar{
+  background:linear-gradient(180deg,var(--navy),var(--navy-2));
+  color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sb-brand{display:flex;align-items:center;gap:10px;padding:0 6px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px;}
+.sb-brand img{width:38px;height:38px;border-radius:50%;}
+.sb-brand strong{font-size:.95rem;display:block;}
+.sb-brand span{font-size:.7rem;color:var(--gold);}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  color:#cfd3ef;font-size:.88rem;cursor:pointer;transition:.2s;
+}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:var(--saffron);color:#fff;}
+.nav-icon{width:18px;text-align:center;}
+.sb-foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:.75rem;color:#9aa0cc;}
+
+.main{padding:20px 26px 60px;overflow-x:hidden;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+.topbar h2{font-size:1.3rem;}
+.top-actions{display:flex;align-items:center;gap:12px;}
+.role-pill{background:var(--gold);color:#2a2200;padding:5px 12px;border-radius:999px;font-size:.75rem;font-weight:600;}
+.icon-btn{background:var(--card);border:1px solid var(--card-border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1rem;}
+
+.view{display:none;}
+.view.active{display:block;}
+
+/* dashboard cards */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px;}
+.stat-card{padding:18px;}
+.stat-card .label{font-size:.78rem;color:var(--ink-soft);margin-bottom:6px;}
+.stat-card .value{font-size:1.6rem;font-weight:700;}
+.stat-card .value.green{color:var(--green);}
+.stat-card .value.red{color:var(--red);}
+.stat-card .value.gold{color:var(--saffron);}
+
+.two-col{display:grid;grid-template-columns:1.3fr .7fr;gap:18px;margin-bottom:22px;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+.panel{padding:18px;}
+.panel h3{font-size:1rem;margin-bottom:14px;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:.78rem;}
+.bar-row .lbl{width:38px;color:var(--ink-soft);}
+.bar-track{flex:1;height:10px;background:var(--line);border-radius:6px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--saffron),var(--gold));border-radius:6px;}
+.notif-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.82rem;}
+.notif-item:last-child{border:none;}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--saffron);margin-top:5px;flex-shrink:0;}
+
+/* tables */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.86rem;}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{color:var(--ink-soft);font-weight:600;font-size:.76rem;text-transform:uppercase;letter-spacing:.03em;}
+tr:hover td{background:rgba(232,116,28,.05);}
+.badge{padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:600;}
+.badge.green{background:#dff5e6;color:var(--green);}
+.badge.yellow{background:#fdf2d6;color:var(--yellow);}
+.badge.red{background:#fbe1e1;color:var(--red);}
+[data-theme="dark"] .badge.green{background:rgba(27,158,90,.2);}
+[data-theme="dark"] .badge.yellow{background:rgba(214,160,24,.2);}
+[data-theme="dark"] .badge.red{background:rgba(212,63,63,.2);}
+.avatar-sm{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--line);}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;justify-content:space-between;}
+.toolbar .filters{display:flex;gap:8px;flex-wrap:wrap;}
+.toolbar input,.toolbar select{
+  padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.84rem;
+}
+.icon-action{background:none;border:none;font-size:.95rem;padding:4px 6px;border-radius:6px;}
+.icon-action:hover{background:var(--line);}
+
+.pagination{display:flex;gap:6px;justify-content:center;margin-top:14px;}
+.pagination button{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:.8rem;
+}
+.pagination button.active{background:var(--saffron);color:#fff;border-color:var(--saffron);}
+
+/* modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(10,12,30,.55);display:none;align-items:center;justify-content:center;
+  z-index:300;padding:20px;backdrop-filter:blur(4px);
+}
+.modal-overlay.show{display:flex;}
+.modal-box{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:26px;}
+.modal-box.wide{max-width:780px;}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-head h3{font-size:1.05rem;}
+.modal-close{background:none;border:none;font-size:1.2rem;color:var(--ink-soft);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid .full{grid-column:1/-1;}
+.field-sm label{font-size:.78rem;color:var(--ink-soft);display:block;margin-bottom:4px;}
+.field-sm input,.field-sm select,.field-sm textarea{
+  width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink);font-size:.88rem;
+}
+[data-theme="dark"] .field-sm input,[data-theme="dark"] .field-sm select,[data-theme="dark"] .field-sm textarea{background:rgba(0,0,0,.25);}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+.photo-upload{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.photo-preview{width:70px;height:70px;border-radius:50%;object-fit:cover;background:var(--line);}
+
+/* toast */
+#toastBox{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:10px;}
+.toast{padding:12px 18px;border-radius:10px;color:#fff;font-size:.85rem;box-shadow:var(--shadow);animation:slideIn .3s ease;min-width:220px;}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
+.toast.info{background:var(--navy);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* loader */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.spinner{width:42px;height:42px;border:4px solid var(--line);border-top-color:var(--saffron);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.empty-state{text-align:center;padding:40px 10px;color:var(--ink-soft);}
+
+/* offline banner */
+#offlineBanner{display:none;background:var(--red);color:#fff;text-align:center;padding:6px;font-size:.8rem;}
+
+/* receipt / print templates (hidden on screen) */
+#printArea{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{display:block;position:absolute;left:0;top:0;width:100%;}
+}
+.receipt-a4{width:190mm;margin:10mm auto;padding:14px;border:1px solid #333;font-family:Arial,sans-serif;color:#000;}
+.receipt-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #16205A;padding-bottom:10px;margin-bottom:10px;}
+.receipt-head img{width:50px;height:50px;border-radius:50%;}
+.receipt-head h2{font-size:1.1rem;color:#16205A;}
+.receipt-head p{font-size:.75rem;color:#444;}
+.receipt-meta{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:10px;}
+.receipt-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:10px;}
+.receipt-table td,.receipt-table th{border:1px solid #999;padding:6px 8px;}
+.receipt-foot{display:flex;justify-content:space-between;font-size:.78rem;margin-top:24px;}
+.id-card{width:54mm;height:86mm;border:1px solid #333;border-radius:8px;padding:8px;display:inline-block;margin:6px;font-family:Arial;text-align:center;color:#000;}
+
+@media(max-width:880px){
+  #app.show{grid-template-columns:1fr;}
+  .sidebar{position:fixed;left:-260px;width:230px;z-index:200;transition:.3s;}
+  .sidebar.open{left:0;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div></div>
+<div id="offlineBanner">⚠ आप ऑफ़लाइन हैं — परिवर्तन इंटरनेट आने पर सिंक होंगे</div>
+<div id="toastBox"></div>
+
+<!-- ============================================================
+     LOGIN SCREEN
+============================================================ -->
+<div id="loginScreen">
+  <div class="login-box glass">
+    <img src="logo.jpeg" alt="logo">
+    <h1>Jivan Jyoti Classes</h1>
+    <p class="sub">Coaching Institute Management System</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="you@institute.com" required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" required>
+      </div>
+      <div class="row-between">
+        <label><input type="checkbox" id="rememberMe" checked> मुझे याद रखें</label>
+        <button type="button" class="link-btn" id="forgotBtn">Forgot Password?</button>
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+      <p id="loginMsg"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+============================================================ -->
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <img src="logo.jpeg" alt="logo">
+      <div><strong>Jivan Jyoti</strong><span>Classes CMS</span></div>
+    </div>
+    <div class="nav-item active" data-view="dashboard"><span class="nav-icon">🏠</span> Dashboard</div>
+    <div class="nav-item" data-view="students"><span class="nav-icon">🎓</span> Students</div>
+    <div class="nav-item" data-view="attendance"><span class="nav-icon">📅</span> Attendance</div>
+    <div class="nav-item" data-view="fees"><span class="nav-icon">💰</span> Fees</div>
+    <div class="nav-item" data-view="promotion"><span class="nav-icon">⬆️</span> Promotion</div>
+    <div class="nav-item" data-view="teachers"><span class="nav-icon">👩‍🏫</span> Teachers</div>
+    <div class="nav-item" data-view="expenses"><span class="nav-icon">🧾</span> Expenses</div>
+    <div class="nav-item" data-view="reports"><span class="nav-icon">📊</span> Reports</div>
+    <div class="nav-item" data-view="whatsapp"><span class="nav-icon">💬</span> WhatsApp</div>
+    <div class="nav-item owner-only" data-view="users"><span class="nav-icon">🔐</span> Users</div>
+    <div class="nav-item owner-admin-only" data-view="trash"><span class="nav-icon">🗑️</span> Trash</div>
+    <div class="nav-item owner-only" data-view="audit"><span class="nav-icon">📜</span> Audit Log</div>
+    <div class="nav-item owner-only" data-view="settings"><span class="nav-icon">⚙️</span> Settings</div>
+    <div class="sb-foot">Logged in as <span id="sbUserName">—</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="icon-btn" id="menuToggle" style="display:none;">☰</button>
+        <h2 id="viewTitle">Dashboard</h2>
+      </div>
+      <div class="top-actions">
+        <span class="role-pill" id="rolePill">—</span>
+        <button class="icon-btn" id="themeToggle" title="Dark/Light">🌙</button>
+        <button class="btn btn-outline btn-sm" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="view active" id="view-dashboard">
+      <div class="cards-grid">
+        <div class="glass stat-card"><div class="label">Total Students</div><div class="value" id="statTotalStudents">0</div></div>
+        <div class="glass stat-card"><div class="label">Active Students</div><div class="value green" id="statActiveStudents">0</div></div>
+        <div class="glass stat-card"><div class="label">Inactive Students</div><div class="value red" id="statInactiveStudents">0</div></div>
+        <div class="glass stat-card"><div class="label">Today's Collection</div><div class="value gold" id="statTodayCollection">₹0</div></div>
+        <div class="glass stat-card"><div class="label">Monthly Collection</div><div class="value gold" id="statMonthCollection">₹0</div></div>
+        <div class="glass stat-card"><div class="label">Pending Fees</div><div class="value red" id="statPendingFees">₹0</div></div>
+        <div class="glass stat-card"><div class="label">Today's Admissions</div><div class="value" id="statTodayAdmissions">0</div></div>
+        <div class="glass stat-card"><div class="label">Today's Attendance</div><div class="value" id="statTodayAttendance">0%</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="glass panel">
+          <h3>Monthly Income (Last 6 Months)</h3>
+          <div id="incomeChart"></div>
+        </div>
+        <div class="glass panel">
+          <h3>Notifications</h3>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="glass panel">
+          <h3>Recent Payments</h3>
+          <div class="table-wrap"><table id="recentPaymentsTable"><thead><tr><th>Student</th><th>Amount</th><th>Mode</th><th>Date</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="glass panel">
+          <h3>Recent Admissions</h3>
+          <div class="table-wrap"><table id="recentAdmissionsTable"><thead><tr><th>Name</th><th>Class</th><th>Date</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== STUDENTS ===================== -->
+    <section class="view" id="view-students">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="text" id="studentSearch" placeholder="🔍 Name / Adm No / Mobile">
+          <select id="filterClass"><option value="">All Classes</option></select>
+          <select id="filterBatch"><option value="">All Batches</option><option>Morning</option><option>Evening</option><option>Both</option></select>
+          <select id="filterStatus"><option value="">All Status</option><option>Active</option><option>Inactive</option><option>Left</option><option>Transfer</option></select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="addStudentBtn">+ Add Student</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="studentsTable">
+          <thead><tr><th>Photo</th><th>Adm No</th><th>Name</th><th>Class</th><th>Batch</th><th>Mobile</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="studentsPagination"></div>
+    </section>
+
+    <!-- ===================== ATTENDANCE ===================== -->
+    <section class="view" id="view-attendance">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="date" id="attDate">
+          <select id="attClass"><option value="">Class चुनें</option></select>
+          <select id="attBatch"><option value="">Batch चुनें</option><option>Morning</option><option>Evening</option><option>Both</option></select>
+          <button class="btn btn-outline btn-sm" id="attLoadBtn">Load Students</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="attSaveBtn">Save Attendance</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="attendanceTable">
+          <thead><tr><th>Adm No</th><th>Name</th><th>Present</th><th>Absent</th><th>Leave</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="glass panel" style="margin-top:18px;">
+        <h3>Monthly Attendance Report</h3>
+        <div class="toolbar"><input type="month" id="attReportMonth"><select id="attReportClass"><option value="">Class चुनें</option></select><button class="btn btn-outline btn-sm" id="attReportBtn">Generate</button></div>
+        <div class="table-wrap"><table id="attReportTable"><thead><tr><th>Name</th><th>Present</th><th>Absent</th><th>Leave</th><th>%</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ===================== FEES ===================== -->
+    <section class="view" id="view-fees">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="text" id="feeSearch" placeholder="🔍 Student Name / Adm No / Mobile">
+          <select id="duesFilter">
+            <option value="">All</option>
+            <option value="today">Today's Due</option>
+            <option value="7">7 Days Due</option>
+            <option value="15">15 Days Due</option>
+            <option value="30">30 Days Due</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="collectFeeBtn">+ Collect Fee</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="feesTable">
+          <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== PROMOTION ===================== -->
+    <section class="view" id="view-promotion">
+      <div class="glass panel">
+        <h3>Student Promotion</h3>
+        <div class="toolbar">
+          <div class="filters">
+            <select id="promoFromClass"><option value="">From Class</option></select>
+            <select id="promoToClass"><option value="">To Class</option></select>
+          </div>
+          <button class="btn btn-outline btn-sm" id="promoLoadBtn">Load Students</button>
+        </div>
+        <div class="table-wrap"><table id="promoTable"><thead><tr><th><input type="checkbox" id="promoSelectAll"></th><th>Adm No</th><th>Name</th><th>Current Class</th></tr></thead><tbody></tbody></table></div>
+        <button class="btn btn-primary btn-sm" id="promoConfirmBtn" style="margin-top:14px;">Promote Selected</button>
+      </div>
+    </section>
+
+    <!-- ===================== TEACHERS ===================== -->
+    <section class="view" id="view-teachers">
+      <div class="toolbar">
+        <div></div>
+        <button class="btn btn-primary btn-sm" id="addTeacherBtn">+ Add Teacher</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="teachersTable">
+          <thead><tr><th>Photo</th><th>Name</th><th>Phone</th><th>Classes</th><th>Subjects</th><th>Salary</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== EXPENSES ===================== -->
+    <section class="view" id="view-expenses">
+      <div class="cards-grid">
+        <div class="glass stat-card"><div class="label">Total Income</div><div class="value green" id="expTotalIncome">₹0</div></div>
+        <div class="glass stat-card"><div class="label">Total Expense</div><div class="value red" id="expTotalExpense">₹0</div></div>
+        <div class="glass stat-card"><div class="label">Net Profit</div><div class="value gold" id="expNetProfit">₹0</div></div>
+      </div>
+      <div class="toolbar">
+        <div></div>
+        <button class="btn btn-primary btn-sm" id="addExpenseBtn">+ Add Expense</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="expensesTable">
+          <thead><tr><th>Category</th><th>Description</th><th>Amount</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== REPORTS ===================== -->
+    <section class="view" id="view-reports">
+      <div class="toolbar">
+        <div class="filters">
+          <select id="reportType">
+            <option value="daily">Daily Collection</option>
+            <option value="monthly">Monthly Collection</option>
+            <option value="yearly">Yearly Collection</option>
+            <option value="classwise">Class-wise Report</option>
+            <option value="batchwise">Batch-wise Report</option>
+            <option value="pending">Pending Fees</option>
+            <option value="expense">Expense Report</option>
+            <option value="profit">Profit Report</option>
+          </select>
+          <input type="date" id="reportDate">
+        </div>
+        <button class="btn btn-outline btn-sm" id="exportReportBtn">Export CSV</button>
+      </div>
+      <div class="glass table-wrap" style="padding:6px;"><table id="reportTable"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- ===================== WHATSAPP ===================== -->
+    <section class="view" id="view-whatsapp">
+      <div class="glass panel">
+        <h3>Send WhatsApp Message</h3>
+        <div class="form-grid">
+          <div class="field-sm"><label>Select</label>
+            <select id="waTargetType"><option value="one">One Student</option><option value="class">Entire Class</option><option value="batch">Entire Batch</option></select>
+          </div>
+          <div class="field-sm"><label>Student / Class / Batch</label><select id="waTargetValue"></select></div>
+          <div class="field-sm"><label>Template</label>
+            <select id="waTemplate">
+              <option value="reminder">Fee Reminder</option>
+              <option value="admission">Admission Confirmation</option>
+              <option value="holiday">Holiday Notice</option>
+              <option value="exam">Exam Notice</option>
+              <option value="birthday">Birthday Wish</option>
+            </select>
+          </div>
+          <div class="field-sm"><label>Language</label>
+            <select id="waLang"><option value="hi">Hindi</option><option value="en">English</option><option value="hinglish">Hinglish</option></select>
+          </div>
+          <div class="field-sm full"><label>Message (Editable)</label><textarea id="waMessage" rows="5"></textarea></div>
+        </div>
+        <div class="modal-foot" style="justify-content:flex-start;">
+          <button class="btn btn-outline btn-sm" id="waGenerateBtn">Generate Message</button>
+          <button class="btn btn-primary btn-sm" id="waSendBtn">Open in WhatsApp</button>
+        </div>
+      </div>
+      <div class="glass panel" style="margin-top:18px;">
+        <h3>Message History</h3>
+        <div class="table-wrap"><table id="waHistoryTable"><thead><tr><th>Date</th><th>Student</th><th>Type</th><th>Sent By</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ===================== USERS (Owner only) ===================== -->
+    <section class="view" id="view-users">
+      <div class="toolbar"><div></div><button class="btn btn-primary btn-sm" id="addUserBtn">+ Add User</button></div>
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="usersTable"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- ===================== TRASH ===================== -->
+    <section class="view" id="view-trash">
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="trashTable"><thead><tr><th>Type</th><th>Name</th><th>Deleted By</th><th>Deleted Date</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- ===================== AUDIT LOG ===================== -->
+    <section class="view" id="view-audit">
+      <div class="glass table-wrap" style="padding:6px;">
+        <table id="auditTable"><thead><tr><th>Action</th><th>By</th><th>Details</th><th>Date</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- ===================== SETTINGS ===================== -->
+    <section class="view" id="view-settings">
+      <div class="glass panel" style="max-width:600px;">
+        <h3>Institute Settings</h3>
+        <div class="form-grid">
+          <div class="field-sm full"><label>Institute Name</label><input type="text" id="setName"></div>
+          <div class="field-sm full"><label>Address</label><input type="text" id="setAddress"></div>
+          <div class="field-sm"><label>Phone</label><input type="text" id="setPhone"></div>
+          <div class="field-sm"><label>Email</label><input type="text" id="setEmail"></div>
+          <div class="field-sm full"><label>Receipt Footer</label><input type="text" id="setFooter"></div>
+          <div class="field-sm"><label>Academic Session</label><input type="text" id="setSession" placeholder="2026-27"></div>
+          <div class="field-sm"><label>WhatsApp Country Code</label><input type="text" id="setCountryCode" placeholder="91" maxlength="4"></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-primary btn-sm" id="saveSettingsBtn">Save Settings</button></div>
+      </div>
+      <div class="glass panel" style="max-width:600px;margin-top:18px;">
+        <h3>Backup</h3>
+        <button class="btn btn-outline btn-sm" id="backupBtn">Export Full Database (JSON)</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+<div class="modal-overlay" id="studentModal">
+  <div class="glass modal-box wide">
+    <div class="modal-head"><h3 id="studentModalTitle">Add Student</h3><button class="modal-close" data-close="studentModal">✕</button></div>
+    <form id="studentForm">
+      <input type="hidden" id="studentId">
+      <div class="photo-upload">
+        <img id="studentPhotoPreview" class="photo-preview" src="https://via.placeholder.com/70?text=Photo">
+        <input type="file" id="studentPhotoFile" accept="image/*">
+      </div>
+      <div class="form-grid">
+        <div class="field-sm"><label>Student Name *</label><input type="text" id="sName" required></div>
+        <div class="field-sm"><label>Father Name</label><input type="text" id="sFather"></div>
+        <div class="field-sm"><label>Mother Name</label><input type="text" id="sMother"></div>
+        <div class="field-sm"><label>Mobile Number *</label><input type="tel" id="sMobile" required></div>
+        <div class="field-sm"><label>Guardian Number</label><input type="tel" id="sGuardian"></div>
+        <div class="field-sm"><label>School Name</label><input type="text" id="sSchool"></div>
+        <div class="field-sm"><label>Class *</label><select id="sClass" required><option value="">कक्षा चुनें</option></select></div>
+        <div class="field-sm"><label>Section</label><input type="text" id="sSection"></div>
+        <div class="field-sm"><label>Subjects</label><input type="text" id="sSubjects" placeholder="Maths, Science..."></div>
+        <div class="field-sm"><label>Batch *</label><select id="sBatch" required><option>Morning</option><option>Evening</option><option>Both</option></select></div>
+        <div class="field-sm"><label>Admission Date *</label><input type="date" id="sAdmDate" required></div>
+        <div class="field-sm"><label>Status</label><select id="sStatus"><option>Active</option><option>Inactive</option><option>Left</option><option>Transfer</option></select></div>
+        <div class="field-sm full"><label>Address</label><input type="text" id="sAddress"></div>
+        <div class="field-sm full"><label>Notes</label><textarea id="sNotes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline btn-sm" data-close="studentModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="feeModal">
+  <div class="glass modal-box wide">
+    <div class="modal-head"><h3>Collect Fee</h3><button class="modal-close" data-close="feeModal">✕</button></div>
+    <form id="feeForm">
+      <div class="field-sm full" style="margin-bottom:14px;"><label>Student *</label><select id="feeStudent" required></select></div>
+      <div class="form-grid">
+        <div class="field-sm"><label>Admission Fee</label><input type="number" id="fAdmission" value="0"></div>
+        <div class="field-sm"><label>Monthly Fee</label><input type="number" id="fMonthly" value="0"></div>
+        <div class="field-sm"><label>Exam Fee</label><input type="number" id="fExam" value="0"></div>
+        <div class="field-sm"><label>Books Fee</label><input type="number" id="fBooks" value="0"></div>
+        <div class="field-sm"><label>Transport Fee</label><input type="number" id="fTransport" value="0"></div>
+        <div class="field-sm"><label>Other Charges</label><input type="number" id="fOther" value="0"></div>
+        <div class="field-sm"><label>Discount</label><input type="number" id="fDiscount" value="0"></div>
+        <div class="field-sm"><label>Late Fine</label><input type="number" id="fFine" value="0"></div>
+        <div class="field-sm"><label>Previous Due</label><input type="number" id="fPrevDue" value="0"></div>
+        <div class="field-sm"><label>Paid Amount *</label><input type="number" id="fPaid" required></div>
+        <div class="field-sm"><label>Payment Mode</label><select id="fMode"><option>Cash</option><option>UPI</option><option>Bank</option><option>Cheque</option></select></div>
+        <div class="field-sm"><label>For Month</label><input type="month" id="fMonth"></div>
+      </div>
+      <p style="margin-top:10px;font-size:.85rem;">Total: ₹<span id="feeTotalPreview">0</span> &nbsp; Remaining Due: ₹<span id="feeRemainingPreview">0</span></p>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline btn-sm" data-close="feeModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save &amp; Generate Receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="teacherModal">
+  <div class="glass modal-box">
+    <div class="modal-head"><h3>Add Teacher</h3><button class="modal-close" data-close="teacherModal">✕</button></div>
+    <form id="teacherForm">
+      <input type="hidden" id="teacherId">
+      <div class="form-grid">
+        <div class="field-sm full"><label>Name *</label><input type="text" id="tName" required></div>
+        <div class="field-sm"><label>Phone</label><input type="text" id="tPhone"></div>
+        <div class="field-sm"><label>Salary</label><input type="number" id="tSalary"></div>
+        <div class="field-sm full"><label>Assigned Classes</label><input type="text" id="tClasses" placeholder="Class 9, Class 10"></div>
+        <div class="field-sm full"><label>Assigned Subjects</label><input type="text" id="tSubjects" placeholder="Maths, Physics"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline btn-sm" data-close="teacherModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Teacher</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="expenseModal">
+  <div class="glass modal-box">
+    <div class="modal-head"><h3>Add Expense</h3><button class="modal-close" data-close="expenseModal">✕</button></div>
+    <form id="expenseForm">
+      <div class="form-grid">
+        <div class="field-sm"><label>Category *</label>
+          <select id="exCategory" required><option>Rent</option><option>Electricity</option><option>Internet</option><option>Salary</option><option>Books</option><option>Furniture</option><option>Maintenance</option><option>Other</option></select>
+        </div>
+        <div class="field-sm"><label>Amount *</label><input type="number" id="exAmount" required></div>
+        <div class="field-sm full"><label>Description</label><input type="text" id="exDesc"></div>
+        <div class="field-sm"><label>Date</label><input type="date" id="exDate"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline btn-sm" data-close="expenseModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="userModal">
+  <div class="glass modal-box">
+    <div class="modal-head"><h3>Add User</h3><button class="modal-close" data-close="userModal">✕</button></div>
+    <form id="userForm">
+      <div class="form-grid">
+        <div class="field-sm full"><label>Name *</label><input type="text" id="uName" required></div>
+        <div class="field-sm full"><label>Email *</label><input type="email" id="uEmail" required></div>
+        <div class="field-sm full"><label>Temporary Password *</label><input type="text" id="uPassword" required minlength="6"></div>
+        <div class="field-sm full"><label>Role *</label><select id="uRole"><option>Admin</option><option>Reception</option><option>Teacher</option></select></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline btn-sm" data-close="userModal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="glass modal-box" style="max-width:420px;">
+    <div class="modal-head"><h3 id="confirmTitle">Confirm</h3><button class="modal-close" data-close="confirmModal">✕</button></div>
+    <p id="confirmMsg" style="font-size:.9rem;margin-bottom:14px;"></p>
+    <div class="field-sm hidden" id="confirmTypeBox"><label>Type DELETE to confirm</label><input type="text" id="confirmTypeInput"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-outline btn-sm" data-close="confirmModal">Cancel</button>
+      <button type="button" class="btn btn-danger btn-sm" id="confirmActionBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PRINT AREA (Receipt / ID Card)
+============================================================ -->
+<div id="printArea"></div>
+
+<!-- ============================================================
+     FIREBASE + APP LOGIC
+============================================================ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence,
+  createUserWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getDatabase, ref, push, set, update, remove, get, onValue,
+  runTransaction, child, query, orderByChild
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {
+  getStorage, ref as sRef, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+/* ---------------------------------------------------------------
+   FIREBASE CONFIG — apna config yahan daalein.
+   NOTE: Realtime Database use karne ke liye "databaseURL" add karna
+   zaroori hai. Firebase Console > Realtime Database > banayein,
+   wahan se URL milega jaise:
+   "https://jivan-jyoti-classes-default-rtdb.firebaseio.com"
+--------------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCrEsrikoIG0_iLKfbqfdRwxn8-PyznGTg",
+  authDomain: "jivan-jyoti-classes.firebaseapp.com",
+  databaseURL: "REPLACE_WITH_YOUR_REALTIME_DATABASE_URL", // ⚠ Firebase Console > Realtime Database > URL yahan paste karein
+  projectId: "jivan-jyoti-classes",
+  storageBucket: "jivan-jyoti-classes.firebasestorage.app",
+  messagingSenderId: "1033100341219",
+  appId: "1:1033100341219:web:46b8db6220c3544d957ad6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+if(firebaseConfig.databaseURL.includes("REPLACE_WITH")){
+  document.getElementById("loginMsg").style.color = "var(--red)";
+  document.getElementById("loginMsg").textContent = "⚠ Setup incomplete: firebaseConfig.databaseURL abhi tak set nahi hui hai. Firebase Console > Realtime Database se URL copy karke code me daalein.";
+}
+
+// secondary app instance — owner naye users banaye to khud logout na ho
+const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = getAuth(secondaryApp);
+
+/* ---------------------------------------------------------------
+   GLOBAL STATE
+--------------------------------------------------------------- */
+const CLASSES = ["Nursery","LKG","UKG","Class 1","Class 2","Class 3","Class 4","Class 5","Class 6","Class 7","Class 8","Class 9","Class 10","Class 11","Class 12"];
+const state = {
+  currentUser: null, role: null,
+  students: {}, fees: {}, teachers: {}, expenses: {}, settings: {}, trash: {}, audit: {}, users: {},
+  studentsPage: 1, pageSize: 10
+};
+
+/* ---------------------------------------------------------------
+   UTILS
+--------------------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => "₹" + (Number(n)||0).toLocaleString("en-IN");
+const todayStr = () => new Date().toISOString().slice(0,10);
+const thisMonthStr = () => new Date().toISOString().slice(0,7);
+
+function toast(msg, type="info"){
+  const box = $("toastBox");
+  const t = document.createElement("div");
+  t.className = "toast " + type;
+  t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(()=>{ t.remove(); }, 3800);
+}
+function openModal(id){ $(id).classList.add("show"); }
+function closeModal(id){ $(id).classList.remove("show"); }
+document.querySelectorAll("[data-close]").forEach(b=>{
+  b.addEventListener("click", ()=> closeModal(b.dataset.close));
+});
+
+function logAudit(action, details){
+  if(!state.currentUser) return;
+  push(ref(db,"audit_logs"), {
+    action, details, by: state.currentUser.email,
+    date: new Date().toISOString()
+  });
+}
+
+function confirmAction({title, msg, requireType=false, onConfirm}){
+  $("confirmTitle").textContent = title;
+  $("confirmMsg").textContent = msg;
+  $("confirmTypeBox").classList.toggle("hidden", !requireType);
+  $("confirmTypeInput").value = "";
+  openModal("confirmModal");
+  const btn = $("confirmActionBtn");
+  const handler = () => {
+    if(requireType && $("confirmTypeInput").value.trim().toUpperCase() !== "DELETE"){
+      toast("कृपया DELETE टाइप करें", "error"); return;
+    }
+    closeModal("confirmModal");
+    btn.removeEventListener("click", handler);
+    onConfirm();
+  };
+  btn.addEventListener("click", handler);
+}
+
+function populateClassDropdowns(){
+  document.querySelectorAll(".class-dd, #filterClass, #sClass, #attClass, #attReportClass, #promoFromClass, #promoToClass").forEach(()=>{});
+  [$("filterClass"), $("sClass"), $("attClass"), $("attReportClass"), $("promoFromClass"), $("promoToClass")].forEach(sel=>{
+    if(!sel) return;
+    const keepFirst = sel.options[0]?.outerHTML || "";
+    sel.innerHTML = keepFirst;
+    CLASSES.forEach(c=>{
+      const o = document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);
+    });
+  });
+}
+populateClassDropdowns();
+
+/* ---------------------------------------------------------------
+   AUTH
+--------------------------------------------------------------- */
+$("loginForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const email = $("loginEmail").value.trim();
+  const pass = $("loginPassword").value;
+  const remember = $("rememberMe").checked;
+  $("loginMsg").textContent = "";
+  try{
+    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithEmailAndPassword(auth, email, pass);
+  }catch(err){
+    $("loginMsg").textContent = "Login असफल: " + (err.message || "जांचें ईमेल/पासवर्ड");
+  }
+});
+
+$("forgotBtn").addEventListener("click", async ()=>{
+  const email = $("loginEmail").value.trim();
+  if(!email){ $("loginMsg").textContent = "पहले ईमेल भरें फिर Forgot Password दबाएं।"; return; }
+  try{
+    await sendPasswordResetEmail(auth, email);
+    $("loginMsg").style.color = "var(--green)";
+    $("loginMsg").textContent = "Password reset लिंक ईमेल पर भेज दिया गया है।";
+  }catch(err){
+    $("loginMsg").style.color = "var(--red)";
+    $("loginMsg").textContent = "Error: " + err.message;
+  }
+});
+
+$("logoutBtn").addEventListener("click", async ()=>{
+  await signOut(auth);
+});
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    // role fetch from /users/{uid}
+    const snap = await get(ref(db, "users/"+user.uid));
+    if(!snap.exists()){
+      toast("Aapka account role assign nahi hai. Owner se sampark karein.", "error");
+      await signOut(auth);
+      $("loader").style.display="none";
+      return;
+    }
+    const profile = snap.val();
+    state.currentUser = user;
+    state.role = profile.role || "Reception";
+    $("sbUserName").textContent = profile.name || user.email;
+    $("rolePill").textContent = state.role;
+    applyRoleVisibility();
+    $("loginScreen").style.display="none";
+    $("app").classList.add("show");
+    initRealtimeListeners();
+    logAudit("Login", user.email);
+  }else{
+    state.currentUser = null;
+    $("loginScreen").style.display="flex";
+    $("app").classList.remove("show");
+  }
+  $("loader").style.display="none";
+});
+
+function applyRoleVisibility(){
+  const isOwner = state.role === "Owner";
+  const isAdminOrOwner = isOwner || state.role === "Admin";
+  document.querySelectorAll(".owner-only").forEach(el=> el.style.display = isOwner ? "flex" : "none");
+  document.querySelectorAll(".owner-admin-only").forEach(el=> el.style.display = isAdminOrOwner ? "flex" : "none");
+}
+
+/* ---------------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------------- */
+document.querySelectorAll(".nav-item").forEach(item=>{
+  item.addEventListener("click", ()=>{
+    document.querySelectorAll(".nav-item").forEach(i=>i.classList.remove("active"));
+    item.classList.add("active");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    $("view-"+item.dataset.view).classList.add("active");
+    $("viewTitle").textContent = item.textContent.trim();
+    $("sidebar").classList.remove("open");
+    if(item.dataset.view==="reports") renderReport();
+    if(item.dataset.view==="whatsapp") populateWhatsAppTargets();
+  });
+});
+$("menuToggle").addEventListener("click", ()=> $("sidebar").classList.toggle("open"));
+if(window.innerWidth<880) $("menuToggle").style.display="flex";
+
+/* theme toggle */
+$("themeToggle").addEventListener("click", ()=>{
+  const isDark = document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme", isDark?"":"dark");
+  $("themeToggle").textContent = isDark ? "🌙" : "☀️";
+});
+
+/* offline detection */
+window.addEventListener("offline", ()=> $("offlineBanner").style.display="block");
+window.addEventListener("online", ()=> $("offlineBanner").style.display="none");
+
+/* ---------------------------------------------------------------
+   REALTIME LISTENERS
+--------------------------------------------------------------- */
+function initRealtimeListeners(){
+  onValue(ref(db,"students"), snap=>{ state.students = snap.val() || {}; renderStudents(); renderDashboard(); refreshFeeStudentDropdown(); refreshAttClassStudents(); });
+  onValue(ref(db,"fees"), snap=>{ state.fees = snap.val() || {}; renderDashboard(); renderFees(); });
+  onValue(ref(db,"teachers"), snap=>{ state.teachers = snap.val() || {}; renderTeachers(); });
+  onValue(ref(db,"expenses"), snap=>{ state.expenses = snap.val() || {}; renderExpenses(); });
+  onValue(ref(db,"settings/institute"), snap=>{ state.settings = snap.val() || {}; renderSettings(); });
+  onValue(ref(db,"trash"), snap=>{ state.trash = snap.val() || {}; renderTrash(); });
+  onValue(ref(db,"audit_logs"), snap=>{ state.audit = snap.val() || {}; renderAudit(); });
+  onValue(ref(db,"users"), snap=>{ state.users = snap.val() || {}; renderUsers(); });
+  onValue(ref(db,"whatsapp_log"), snap=>{ renderWaHistory(snap.val() || {}); });
+}
+
+/* =================================================================
+   DASHBOARD
+================================================================= */
+function renderDashboard(){
+  const students = Object.entries(state.students);
+  const total = students.length;
+  const active = students.filter(([,s])=>s.status==="Active").length;
+  const inactive = total - active;
+  $("statTotalStudents").textContent = total;
+  $("statActiveStudents").textContent = active;
+  $("statInactiveStudents").textContent = inactive;
+
+  const today = todayStr(), month = thisMonthStr();
+  let todayCollection=0, monthCollection=0, pendingFees=0;
+  let recentPayments=[];
+  Object.entries(state.fees).forEach(([studId, recs])=>{
+    Object.entries(recs||{}).forEach(([rid,r])=>{
+      const d = (r.date||"").slice(0,10);
+      if(d===today) todayCollection += Number(r.paid||0);
+      if(d.startsWith(month)) monthCollection += Number(r.paid||0);
+      pendingFees += Number(r.remainingDue||0);
+      recentPayments.push({...r, studId, rid});
+    });
+  });
+  $("statTodayCollection").textContent = fmt(todayCollection);
+  $("statMonthCollection").textContent = fmt(monthCollection);
+  $("statPendingFees").textContent = fmt(pendingFees);
+
+  const todayAdm = students.filter(([,s])=>s.admissionDate===today).length;
+  $("statTodayAdmissions").textContent = todayAdm;
+
+  recentPayments.sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const rpBody = $("recentPaymentsTable").querySelector("tbody");
+  rpBody.innerHTML = recentPayments.slice(0,6).map(r=>{
+    const stud = state.students[r.studId] || {};
+    return `<tr><td>${stud.name||"—"}</td><td>${fmt(r.paid)}</td><td>${r.mode||""}</td><td>${(r.date||"").slice(0,10)}</td></tr>`;
+  }).join("") || `<tr><td colspan="4" class="empty-state">कोई भुगतान नहीं</td></tr>`;
+
+  const recentAdm = students.sort((a,b)=> new Date(b[1].admissionDate||0)-new Date(a[1].admissionDate||0)).slice(0,6);
+  const raBody = $("recentAdmissionsTable").querySelector("tbody");
+  raBody.innerHTML = recentAdm.map(([,s])=>`<tr><td>${s.name}</td><td>${s.class}</td><td>${s.admissionDate||""}</td></tr>`).join("") || `<tr><td colspan="3" class="empty-state">कोई एडमिशन नहीं</td></tr>`;
+
+  // income chart - last 6 months
+  const monthsArr=[]; const now=new Date();
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); monthsArr.push(d.toISOString().slice(0,7)); }
+  const incomeByMonth = {}; monthsArr.forEach(m=>incomeByMonth[m]=0);
+  Object.values(state.fees).forEach(recs=> Object.values(recs||{}).forEach(r=>{
+    const m=(r.date||"").slice(0,7); if(incomeByMonth[m]!==undefined) incomeByMonth[m]+=Number(r.paid||0);
+  }));
+  const maxVal = Math.max(1, ...Object.values(incomeByMonth));
+  $("incomeChart").innerHTML = monthsArr.map(m=>{
+    const val = incomeByMonth[m]; const pct = Math.round((val/maxVal)*100);
+    const label = new Date(m+"-01").toLocaleString("default",{month:"short"});
+    return `<div class="bar-row"><span class="lbl">${label}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span>${fmt(val)}</span></div>`;
+  }).join("");
+
+  // notifications
+  let notifs = [];
+  students.forEach(([,s])=>{
+    if(s.dob){
+      const d = new Date(s.dob);
+      const t = new Date();
+      if(d.getDate()===t.getDate() && d.getMonth()===t.getMonth()) notifs.push(`🎂 ${s.name} का आज जन्मदिन है`);
+    }
+  });
+  if(todayAdm>0) notifs.push(`🆕 आज ${todayAdm} नए एडमिशन हुए`);
+  if(todayCollection>0) notifs.push(`💰 आज ₹${todayCollection} की वसूली हुई`);
+  if(pendingFees>0) notifs.push(`⚠ कुल ₹${pendingFees} फीस बकाया है`);
+  $("notifList").innerHTML = notifs.length ? notifs.map(n=>`<div class="notif-item"><span class="notif-dot"></span>${n}</div>`).join("") : `<div class="empty-state">कोई नई सूचना नहीं</div>`;
+
+  // attendance % today (rough estimate using today's attendance node — fetched separately below)
+  get(ref(db,"attendance/"+today)).then(snap=>{
+    if(!snap.exists()){ $("statTodayAttendance").textContent="0%"; return; }
+    let present=0, totalMarked=0;
+    Object.values(snap.val()).forEach(batch=> Object.values(batch).forEach(st=>{ totalMarked++; if(st.status==="Present") present++; }));
+    $("statTodayAttendance").textContent = totalMarked ? Math.round((present/totalMarked)*100)+"%" : "0%";
+  });
+}
+
+/* =================================================================
+   STUDENTS MODULE
+================================================================= */
+let editingStudentPhotoUrl = "";
+
+$("addStudentBtn").addEventListener("click", ()=>{
+  $("studentForm").reset();
+  $("studentId").value = "";
+  $("studentModalTitle").textContent = "Add Student";
+  $("studentPhotoPreview").src = "https://via.placeholder.com/70?text=Photo";
+  editingStudentPhotoUrl = "";
+  $("sAdmDate").value = todayStr();
+  openModal("studentModal");
+});
+
+$("studentPhotoFile").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(file){ $("studentPhotoPreview").src = URL.createObjectURL(file); }
+});
+
+$("studentForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const id = $("studentId").value;
+  let photoUrl = editingStudentPhotoUrl;
+  const file = $("studentPhotoFile").files[0];
+
+  const data = {
+    name: $("sName").value.trim(),
+    father: $("sFather").value.trim(),
+    mother: $("sMother").value.trim(),
+    mobile: $("sMobile").value.trim(),
+    guardian: $("sGuardian").value.trim(),
+    school: $("sSchool").value.trim(),
+    class: $("sClass").value,
+    section: $("sSection").value.trim(),
+    subjects: $("sSubjects").value.trim(),
+    batch: $("sBatch").value,
+    admissionDate: $("sAdmDate").value,
+    status: $("sStatus").value,
+    address: $("sAddress").value.trim(),
+    notes: $("sNotes").value.trim()
+  };
+
+  try{
+    let studentId = id;
+    if(!id){
+      // generate auto admission number via transaction counter
+      const counterRef = ref(db,"counters/admissionNo");
+      const txResult = await runTransaction(counterRef, (cur)=> (cur||0)+1);
+      const admNo = "JJ" + String(txResult.snapshot.val()).padStart(4,"0");
+      data.admissionNo = admNo;
+      const newRef = push(ref(db,"students"));
+      studentId = newRef.key;
+      await set(newRef, data);
+    }else{
+      await update(ref(db,"students/"+id), data);
+    }
+    if(file){
+      const fileRef = sRef(storage, `students/${studentId}/photo_${Date.now()}.jpg`);
+      await uploadBytes(fileRef, file);
+      photoUrl = await getDownloadURL(fileRef);
+      await update(ref(db,"students/"+studentId), {photoUrl});
+    }
+    logAudit(id?"Student Updated":"Student Added", data.name);
+    toast("Student saved!", "success");
+    closeModal("studentModal");
+  }catch(err){ toast("Error: "+err.message, "error"); }
+});
+
+function renderStudents(){
+  const search = ($("studentSearch").value||"").toLowerCase();
+  const fClass = $("filterClass").value, fBatch = $("filterBatch").value, fStatus = $("filterStatus").value;
+
+  let list = Object.entries(state.students).filter(([id,s])=>{
+    if(search && !(`${s.name} ${s.admissionNo} ${s.mobile}`.toLowerCase().includes(search))) return false;
+    if(fClass && s.class!==fClass) return false;
+    if(fBatch && s.batch!==fBatch) return false;
+    if(fStatus && s.status!==fStatus) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(list.length/state.pageSize));
+  if(state.studentsPage>totalPages) state.studentsPage = totalPages;
+  const startIdx = (state.studentsPage-1)*state.pageSize;
+  const pageItems = list.slice(startIdx, startIdx+state.pageSize);
+
+  const tbody = $("studentsTable").querySelector("tbody");
+  tbody.innerHTML = pageItems.map(([id,s])=>`
+    <tr>
+      <td><img class="avatar-sm" src="${s.photoUrl||'https://via.placeholder.com/32?text=👤'}"></td>
+      <td>${s.admissionNo||"—"}</td>
+      <td>${s.name}</td>
+      <td>${s.class}</td>
+      <td>${s.batch}</td>
+      <td>${s.mobile}</td>
+      <td><span class="badge ${s.status==='Active'?'green':(s.status==='Inactive'?'yellow':'red')}">${s.status}</span></td>
+      <td>
+        <button class="icon-action" onclick="window.editStudent('${id}')">✏️</button>
+        <button class="icon-action" onclick="window.printIdCard('${id}')">🪪</button>
+        <button class="icon-action" onclick="window.deleteStudent('${id}')">🗑️</button>
+      </td>
+    </tr>`).join("") || `<tr><td colspan="8" class="empty-state">कोई student नहीं मिला</td></tr>`;
+
+  const pag = $("studentsPagination");
+  pag.innerHTML = "";
+  for(let p=1;p<=totalPages;p++){
+    const b = document.createElement("button");
+    b.textContent = p; if(p===state.studentsPage) b.classList.add("active");
+    b.addEventListener("click", ()=>{ state.studentsPage=p; renderStudents(); });
+    pag.appendChild(b);
+  }
+}
+["studentSearch","filterClass","filterBatch","filterStatus"].forEach(id=> $(id).addEventListener("input", ()=>{ state.studentsPage=1; renderStudents(); }));
+
+window.editStudent = (id)=>{
+  const s = state.students[id];
+  $("studentId").value=id; $("studentModalTitle").textContent="Edit Student";
+  $("sName").value=s.name||""; $("sFather").value=s.father||""; $("sMother").value=s.mother||"";
+  $("sMobile").value=s.mobile||""; $("sGuardian").value=s.guardian||""; $("sSchool").value=s.school||"";
+  $("sClass").value=s.class||""; $("sSection").value=s.section||""; $("sSubjects").value=s.subjects||"";
+  $("sBatch").value=s.batch||"Morning"; $("sAdmDate").value=s.admissionDate||""; $("sStatus").value=s.status||"Active";
+  $("sAddress").value=s.address||""; $("sNotes").value=s.notes||"";
+  $("studentPhotoPreview").src = s.photoUrl || "https://via.placeholder.com/70?text=Photo";
+  editingStudentPhotoUrl = s.photoUrl||"";
+  openModal("studentModal");
+};
+
+window.deleteStudent = (id)=>{
+  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  confirmAction({
+    title:"Delete Student", msg:"यह student trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true,
+    onConfirm: async ()=>{
+      const s = state.students[id];
+      await set(ref(db,"trash/students/"+id), {...s, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+      await remove(ref(db,"students/"+id));
+      logAudit("Student Deleted", s.name);
+      toast("Student trash में भेज दिया गया","success");
+    }
+  });
+};
+
+/* =================================================================
+   ATTENDANCE MODULE
+================================================================= */
+$("attDate").value = todayStr();
+function refreshAttClassStudents(){ /* placeholder for future cache refresh */ }
+
+$("attLoadBtn").addEventListener("click", ()=>{
+  const cls = $("attClass").value, batch=$("attBatch").value;
+  if(!cls||!batch){ toast("Class और Batch चुनें","error"); return; }
+  const list = Object.entries(state.students).filter(([,s])=> s.class===cls && (s.batch===batch||s.batch==="Both"));
+  const tbody = $("attendanceTable").querySelector("tbody");
+  tbody.innerHTML = list.map(([id,s])=>`
+    <tr data-id="${id}">
+      <td>${s.admissionNo}</td><td>${s.name}</td>
+      <td><input type="radio" name="att_${id}" value="Present" checked></td>
+      <td><input type="radio" name="att_${id}" value="Absent"></td>
+      <td><input type="radio" name="att_${id}" value="Leave"></td>
+    </tr>`).join("") || `<tr><td colspan="5" class="empty-state">कोई student नहीं</td></tr>`;
+});
+
+$("attSaveBtn").addEventListener("click", async ()=>{
+  const date = $("attDate").value, cls=$("attClass").value, batch=$("attBatch").value;
+  if(!date||!cls||!batch){ toast("Date, Class, Batch चुनें","error"); return; }
+  const rows = $("attendanceTable").querySelectorAll("tbody tr[data-id]");
+  if(!rows.length){ toast("पहले Load Students करें","error"); return; }
+  const updates = {};
+  rows.forEach(row=>{
+    const id = row.dataset.id;
+    const checked = row.querySelector(`input[name="att_${id}"]:checked`);
+    updates[`attendance/${date}/${batch}_${cls}/${id}`] = { status: checked?checked.value:"Absent", studentName: state.students[id]?.name };
+  });
+  await update(ref(db), updates);
+  logAudit("Attendance Saved", `${cls} - ${batch} - ${date}`);
+  toast("Attendance saved!","success");
+});
+
+$("attReportBtn").addEventListener("click", async ()=>{
+  const month = $("attReportMonth").value, cls = $("attReportClass").value;
+  if(!month||!cls){ toast("Month और Class चुनें","error"); return; }
+  const snap = await get(ref(db,"attendance"));
+  const all = snap.val() || {};
+  const tally = {};
+  Object.entries(all).forEach(([date, batches])=>{
+    if(!date.startsWith(month)) return;
+    Object.entries(batches).forEach(([key, students])=>{
+      const underscoreIdx = key.indexOf("_");
+      const keyClass = underscoreIdx>-1 ? key.slice(underscoreIdx+1) : key;
+      if(keyClass !== cls) return;
+      Object.entries(students).forEach(([sid, rec])=>{
+        tally[sid] = tally[sid] || {present:0,absent:0,leave:0,name:rec.studentName};
+        if(rec.status==="Present") tally[sid].present++;
+        else if(rec.status==="Absent") tally[sid].absent++;
+        else tally[sid].leave++;
+      });
+    });
+  });
+  const tbody = $("attReportTable").querySelector("tbody");
+  tbody.innerHTML = Object.values(tally).map(t=>{
+    const totalDays = t.present+t.absent+t.leave;
+    const pct = totalDays ? Math.round((t.present/totalDays)*100) : 0;
+    return `<tr><td>${t.name}</td><td>${t.present}</td><td>${t.absent}</td><td>${t.leave}</td><td>${pct}%</td></tr>`;
+  }).join("") || `<tr><td colspan="5" class="empty-state">कोई data नहीं</td></tr>`;
+});
+
+/* =================================================================
+   FEES MODULE
+================================================================= */
+function refreshFeeStudentDropdown(){
+  const sel = $("feeStudent");
+  sel.innerHTML = `<option value="">-- Student चुनें --</option>` + Object.entries(state.students).map(([id,s])=>`<option value="${id}">${s.name} (${s.admissionNo}) - ${s.class}</option>`).join("");
+}
+
+$("collectFeeBtn").addEventListener("click", ()=>{
+  $("feeForm").reset();
+  $("feeStudent").value = "";
+  $("fMonth").value = thisMonthStr();
+  recalcFeePreview();
+  openModal("feeModal");
+});
+
+["fAdmission","fMonthly","fExam","fBooks","fTransport","fOther","fDiscount","fFine","fPrevDue","fPaid"].forEach(id=>{
+  $(id).addEventListener("input", recalcFeePreview);
+});
+function recalcFeePreview(){
+  const total = ["fAdmission","fMonthly","fExam","fBooks","fTransport","fOther","fFine","fPrevDue"]
+    .reduce((sum,id)=> sum+Number($(id).value||0), 0) - Number($("fDiscount").value||0);
+  const remaining = Math.max(0, total - Number($("fPaid").value||0));
+  $("feeTotalPreview").textContent = total;
+  $("feeRemainingPreview").textContent = remaining;
+}
+
+$("feeForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const studentId = $("feeStudent").value;
+  if(!studentId){ toast("Student चुनें","error"); return; }
+  const components = {
+    admissionFee:Number($("fAdmission").value||0), monthlyFee:Number($("fMonthly").value||0),
+    examFee:Number($("fExam").value||0), booksFee:Number($("fBooks").value||0),
+    transportFee:Number($("fTransport").value||0), otherCharges:Number($("fOther").value||0),
+    discount:Number($("fDiscount").value||0), fine:Number($("fFine").value||0),
+    previousDue:Number($("fPrevDue").value||0)
+  };
+  const total = components.admissionFee+components.monthlyFee+components.examFee+components.booksFee+components.transportFee+components.otherCharges+components.fine+components.previousDue - components.discount;
+  const paid = Number($("fPaid").value||0);
+  const remainingDue = Math.max(0, total-paid);
+  const mode = $("fMode").value;
+  const month = $("fMonth").value;
+
+  try{
+    const counterRef = ref(db,"counters/receiptNo");
+    const txResult = await runTransaction(counterRef, (cur)=> (cur||0)+1);
+    const receiptNo = "RCPT" + String(txResult.snapshot.val()).padStart(5,"0");
+    const record = {...components, total, paid, remainingDue, mode, month, receiptNo, date: new Date().toISOString(), collectedBy: state.currentUser.email};
+    const newRef = push(ref(db,"fees/"+studentId));
+    await set(newRef, record);
+    logAudit("Fee Collected", `${state.students[studentId]?.name} - ₹${paid}`);
+    toast("Fee collected! Receipt: "+receiptNo, "success");
+    closeModal("feeModal");
+    printReceipt(studentId, {...record, id:newRef.key});
+  }catch(err){ toast("Error: "+err.message, "error"); }
+});
+
+function renderFees(){
+  const search = ($("feeSearch").value||"").toLowerCase();
+  const duesFilter = $("duesFilter").value;
+  const rows = Object.entries(state.students).map(([id,s])=>{
+    const recs = Object.values(state.fees[id]||{});
+    const totalPaid = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
+    const due = recs.length ? recs[recs.length-1].remainingDue||0 : 0;
+    return {id, s, totalPaid, due};
+  }).filter(r=>{
+    if(search && !(`${r.s.name} ${r.s.admissionNo} ${r.s.mobile}`.toLowerCase().includes(search))) return false;
+    if(duesFilter && r.due<=0) return false;
+    return true;
+  });
+  const tbody = $("feesTable").querySelector("tbody");
+  tbody.innerHTML = rows.map(r=>{
+    let badge = r.due<=0 ? '<span class="badge green">Paid</span>' : (r.due<1000 ? '<span class="badge yellow">Due Soon</span>' : '<span class="badge red">Pending</span>');
+    return `<tr>
+      <td>${r.s.admissionNo}</td><td>${r.s.name}</td><td>${r.s.class}</td>
+      <td>${fmt(r.totalPaid)}</td><td>${fmt(r.due)}</td><td>${badge}</td>
+      <td><button class="icon-action" onclick="window.viewFeeHistory('${r.id}')">📜</button></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" class="empty-state">कोई record नहीं</td></tr>`;
+}
+["feeSearch","duesFilter"].forEach(id=> $(id).addEventListener("input", renderFees));
+
+window.viewFeeHistory = (studentId)=>{
+  const recs = Object.entries(state.fees[studentId]||{});
+  if(!recs.length){ toast("कोई fee history नहीं","info"); return; }
+  const s = state.students[studentId];
+  let html = `<div class="glass modal-box wide" style="max-width:700px;"><div class="modal-head"><h3>${s.name} — Fee History</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Month</th><th>Paid</th><th>Due</th><th>Mode</th><th>Date</th><th>Print</th></tr></thead><tbody>`;
+  recs.forEach(([rid,r])=>{
+    html += `<tr><td>${r.receiptNo}</td><td>${r.month||""}</td><td>${fmt(r.paid)}</td><td>${fmt(r.remainingDue)}</td><td>${r.mode}</td><td>${(r.date||"").slice(0,10)}</td><td><button class="icon-action" onclick='window.printReceiptById("${studentId}","${rid}")'>🖨️</button></td></tr>`;
+  });
+  html += `</tbody></table></div></div>`;
+  const overlay = document.createElement("div");
+  overlay.className="modal-overlay show";
+  overlay.innerHTML = html;
+  overlay.addEventListener("click",(e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+};
+window.printReceiptById = (studentId, rid)=>{
+  const r = state.fees[studentId][rid];
+  printReceipt(studentId, {...r, id:rid});
+};
+
+/* =================================================================
+   RECEIPT PRINTING
+================================================================= */
+function printReceipt(studentId, record){
+  const s = state.students[studentId] || {};
+  const inst = state.settings || {};
+  $("printArea").innerHTML = `
+    <div class="receipt-a4">
+      <div class="receipt-head">
+        <img src="logo.jpeg">
+        <div><h2>${inst.name||"Jivan Jyoti Classes"}</h2><p>${inst.address||""} | ${inst.phone||""}</p></div>
+      </div>
+      <div class="receipt-meta">
+        <div>Receipt No: <b>${record.receiptNo}</b><br>Date: ${(record.date||"").slice(0,10)}</div>
+        <div>Student: <b>${s.name}</b><br>Adm No: ${s.admissionNo} | Class: ${s.class} | Batch: ${s.batch}</div>
+      </div>
+      <table class="receipt-table">
+        <tr><th>Particular</th><th>Amount</th></tr>
+        <tr><td>Admission Fee</td><td>${fmt(record.admissionFee)}</td></tr>
+        <tr><td>Monthly Fee (${record.month||""})</td><td>${fmt(record.monthlyFee)}</td></tr>
+        <tr><td>Exam Fee</td><td>${fmt(record.examFee)}</td></tr>
+        <tr><td>Books Fee</td><td>${fmt(record.booksFee)}</td></tr>
+        <tr><td>Transport Fee</td><td>${fmt(record.transportFee)}</td></tr>
+        <tr><td>Other Charges</td><td>${fmt(record.otherCharges)}</td></tr>
+        <tr><td>Previous Due</td><td>${fmt(record.previousDue)}</td></tr>
+        <tr><td>Late Fine</td><td>${fmt(record.fine)}</td></tr>
+        <tr><td>Discount</td><td>- ${fmt(record.discount)}</td></tr>
+        <tr><td><b>Total</b></td><td><b>${fmt(record.total)}</b></td></tr>
+        <tr><td><b>Paid</b></td><td><b>${fmt(record.paid)}</b></td></tr>
+        <tr><td><b>Remaining Due</b></td><td><b>${fmt(record.remainingDue)}</b></td></tr>
+      </table>
+      <p>Payment Mode: ${record.mode}</p>
+      <div class="receipt-foot"><span>${inst.receiptFooter||"धन्यवाद! / Thank you"}</span><span>Signature: ____________</span></div>
+    </div>`;
+  window.print();
+}
+
+/* =================================================================
+   ID CARD PRINT
+================================================================= */
+window.printIdCard = (id)=>{
+  const s = state.students[id];
+  const inst = state.settings || {};
+  $("printArea").innerHTML = `
+    <div class="id-card">
+      <img src="${s.photoUrl||'logo.jpeg'}" style="width:60px;height:60px;border-radius:50%;margin:6px auto;">
+      <h4 style="font-size:.85rem;">${inst.name||"Jivan Jyoti Classes"}</h4>
+      <p style="font-size:.75rem;"><b>${s.name}</b></p>
+      <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${s.batch}<br>Session: ${inst.session||""}</p>
+    </div>`;
+  window.print();
+};
+
+/* =================================================================
+   PROMOTION MODULE
+================================================================= */
+$("promoLoadBtn").addEventListener("click", ()=>{
+  const from = $("promoFromClass").value;
+  if(!from){ toast("From Class चुनें","error"); return; }
+  const list = Object.entries(state.students).filter(([,s])=> s.class===from && s.status==="Active");
+  const tbody = $("promoTable").querySelector("tbody");
+  tbody.innerHTML = list.map(([id,s])=>`<tr><td><input type="checkbox" class="promo-check" value="${id}"></td><td>${s.admissionNo}</td><td>${s.name}</td><td>${s.class}</td></tr>`).join("") || `<tr><td colspan="4" class="empty-state">कोई student नहीं</td></tr>`;
+});
+$("promoSelectAll").addEventListener("change",(e)=>{
+  document.querySelectorAll(".promo-check").forEach(c=> c.checked = e.target.checked);
+});
+$("promoConfirmBtn").addEventListener("click", async ()=>{
+  const to = $("promoToClass").value;
+  if(!to){ toast("To Class चुनें","error"); return; }
+  const ids = [...document.querySelectorAll(".promo-check:checked")].map(c=>c.value);
+  if(!ids.length){ toast("Students चुनें","error"); return; }
+  const updates={};
+  ids.forEach(id=> updates[`students/${id}/class`] = to);
+  await update(ref(db), updates);
+  logAudit("Student Promotion", `${ids.length} students -> ${to}`);
+  toast(`${ids.length} students promote हो गए`,"success");
+});
+
+/* =================================================================
+   TEACHERS MODULE
+================================================================= */
+$("addTeacherBtn").addEventListener("click", ()=>{
+  $("teacherForm").reset(); $("teacherId").value="";
+  openModal("teacherModal");
+});
+$("teacherForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const id = $("teacherId").value;
+  const data = {name:$("tName").value.trim(), phone:$("tPhone").value.trim(), salary:Number($("tSalary").value||0), classes:$("tClasses").value.trim(), subjects:$("tSubjects").value.trim()};
+  if(id) await update(ref(db,"teachers/"+id), data);
+  else await set(push(ref(db,"teachers")), data);
+  logAudit(id?"Teacher Updated":"Teacher Added", data.name);
+  toast("Teacher saved!","success");
+  closeModal("teacherModal");
+});
+function renderTeachers(){
+  const tbody = $("teachersTable").querySelector("tbody");
+  tbody.innerHTML = Object.entries(state.teachers).map(([id,t])=>`
+    <tr><td><img class="avatar-sm" src="${t.photoUrl||'https://via.placeholder.com/32?text=T'}"></td><td>${t.name}</td><td>${t.phone||""}</td><td>${t.classes||""}</td><td>${t.subjects||""}</td><td>${fmt(t.salary)}</td>
+    <td><button class="icon-action" onclick="window.editTeacher('${id}')">✏️</button><button class="icon-action" onclick="window.deleteTeacher('${id}')">🗑️</button></td></tr>`).join("") || `<tr><td colspan="7" class="empty-state">कोई teacher नहीं</td></tr>`;
+}
+window.editTeacher = (id)=>{
+  const t = state.teachers[id];
+  $("teacherId").value=id; $("tName").value=t.name; $("tPhone").value=t.phone||""; $("tSalary").value=t.salary||0;
+  $("tClasses").value=t.classes||""; $("tSubjects").value=t.subjects||"";
+  openModal("teacherModal");
+};
+window.deleteTeacher = (id)=>{
+  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  confirmAction({title:"Delete Teacher", msg:"यह teacher trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
+    const t = state.teachers[id];
+    await set(ref(db,"trash/teachers/"+id), {...t, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+    await remove(ref(db,"teachers/"+id));
+    logAudit("Teacher Deleted", t.name);
+    toast("Teacher trash में भेज दिया गया","success");
+  }});
+};
+
+/* =================================================================
+   EXPENSES MODULE
+================================================================= */
+$("addExpenseBtn").addEventListener("click", ()=>{
+  $("expenseForm").reset(); $("exDate").value = todayStr();
+  openModal("expenseModal");
+});
+$("expenseForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const data = {category:$("exCategory").value, amount:Number($("exAmount").value||0), description:$("exDesc").value.trim(), date:$("exDate").value};
+  await set(push(ref(db,"expenses")), data);
+  logAudit("Expense Added", `${data.category} - ${fmt(data.amount)}`);
+  toast("Expense saved!","success");
+  closeModal("expenseModal");
+});
+function renderExpenses(){
+  const tbody = $("expensesTable").querySelector("tbody");
+  const list = Object.entries(state.expenses);
+  tbody.innerHTML = list.map(([id,ex])=>`
+    <tr><td>${ex.category}</td><td>${ex.description||""}</td><td>${fmt(ex.amount)}</td><td>${ex.date}</td>
+    <td><button class="icon-action" onclick="window.deleteExpense('${id}')">🗑️</button></td></tr>`).join("") || `<tr><td colspan="5" class="empty-state">कोई expense नहीं</td></tr>`;
+
+  const totalExpense = list.reduce((s,[,e])=>s+Number(e.amount||0),0);
+  let totalIncome=0;
+  Object.values(state.fees).forEach(recs=>Object.values(recs||{}).forEach(r=>totalIncome+=Number(r.paid||0)));
+  $("expTotalIncome").textContent = fmt(totalIncome);
+  $("expTotalExpense").textContent = fmt(totalExpense);
+  $("expNetProfit").textContent = fmt(totalIncome-totalExpense);
+}
+window.deleteExpense = (id)=>{
+  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  confirmAction({title:"Delete Expense", msg:"यह expense trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
+    const ex = state.expenses[id];
+    await set(ref(db,"trash/expenses/"+id), {...ex, name:`${ex.category} - ${fmt(ex.amount)}`, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+    await remove(ref(db,"expenses/"+id));
+    logAudit("Expense Deleted", id);
+    toast("Expense trash में भेज दिया गया","success");
+  }});
+};
+
+/* =================================================================
+   REPORTS MODULE
+================================================================= */
+$("reportType").addEventListener("change", renderReport);
+$("reportDate").addEventListener("change", renderReport);
+$("reportDate").value = todayStr();
+
+function renderReport(){
+  const type = $("reportType").value;
+  const thead = $("reportTable").querySelector("thead");
+  const tbody = $("reportTable").querySelector("tbody");
+  let rows=[];
+
+  if(["daily","monthly","yearly"].includes(type)){
+    thead.innerHTML = "<tr><th>Period</th><th>Total Collection</th></tr>";
+    const grouped = {};
+    Object.values(state.fees).forEach(recs=>Object.values(recs||{}).forEach(r=>{
+      let key = (r.date||"").slice(0,10);
+      if(type==="monthly") key=(r.date||"").slice(0,7);
+      if(type==="yearly") key=(r.date||"").slice(0,4);
+      grouped[key]=(grouped[key]||0)+Number(r.paid||0);
+    }));
+    rows = Object.entries(grouped).sort().reverse().map(([k,v])=>`<tr><td>${k}</td><td>${fmt(v)}</td></tr>`);
+  }
+  else if(type==="classwise" || type==="batchwise"){
+    thead.innerHTML = `<tr><th>${type==="classwise"?"Class":"Batch"}</th><th>Students</th><th>Collection</th></tr>`;
+    const grouped = {};
+    Object.entries(state.students).forEach(([id,s])=>{
+      const key = type==="classwise" ? s.class : s.batch;
+      grouped[key] = grouped[key] || {count:0, collection:0};
+      grouped[key].count++;
+      Object.values(state.fees[id]||{}).forEach(r=> grouped[key].collection += Number(r.paid||0));
+    });
+    rows = Object.entries(grouped).map(([k,v])=>`<tr><td>${k}</td><td>${v.count}</td><td>${fmt(v.collection)}</td></tr>`);
+  }
+  else if(type==="pending"){
+    thead.innerHTML = "<tr><th>Student</th><th>Class</th><th>Due</th></tr>";
+    rows = Object.entries(state.students).map(([id,s])=>{
+      const recs = Object.values(state.fees[id]||{});
+      const due = recs.length ? recs[recs.length-1].remainingDue||0 : 0;
+      return due>0 ? `<tr><td>${s.name}</td><td>${s.class}</td><td>${fmt(due)}</td></tr>` : "";
+    }).filter(Boolean);
+  }
+  else if(type==="expense"){
+    thead.innerHTML = "<tr><th>Category</th><th>Total</th></tr>";
+    const grouped={};
+    Object.values(state.expenses).forEach(e=> grouped[e.category]=(grouped[e.category]||0)+Number(e.amount||0));
+    rows = Object.entries(grouped).map(([k,v])=>`<tr><td>${k}</td><td>${fmt(v)}</td></tr>`);
+  }
+  else if(type==="profit"){
+    thead.innerHTML = "<tr><th>Month</th><th>Income</th><th>Expense</th><th>Profit</th></tr>";
+    const income={}, expense={};
+    Object.values(state.fees).forEach(recs=>Object.values(recs||{}).forEach(r=>{ const m=(r.date||"").slice(0,7); income[m]=(income[m]||0)+Number(r.paid||0); }));
+    Object.values(state.expenses).forEach(e=>{ const m=(e.date||"").slice(0,7); expense[m]=(expense[m]||0)+Number(e.amount||0); });
+    const months = [...new Set([...Object.keys(income),...Object.keys(expense)])].sort().reverse();
+    rows = months.map(m=>`<tr><td>${m}</td><td>${fmt(income[m]||0)}</td><td>${fmt(expense[m]||0)}</td><td>${fmt((income[m]||0)-(expense[m]||0))}</td></tr>`);
+  }
+  tbody.innerHTML = rows.join("") || `<tr><td colspan="4" class="empty-state">कोई data नहीं</td></tr>`;
+}
+
+$("exportReportBtn").addEventListener("click", ()=>{
+  const table = $("reportTable");
+  let csv = [...table.querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>`"${td.textContent}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "report.csv"; a.click();
+});
+
+/* =================================================================
+   WHATSAPP MODULE
+================================================================= */
+$("waTargetType").addEventListener("change", populateWhatsAppTargets);
+function populateWhatsAppTargets(){
+  const type = $("waTargetType").value;
+  const sel = $("waTargetValue");
+  if(type==="one"){
+    sel.innerHTML = Object.entries(state.students).map(([id,s])=>`<option value="${id}">${s.name} (${s.mobile})</option>`).join("");
+  }else if(type==="class"){
+    sel.innerHTML = CLASSES.map(c=>`<option value="${c}">${c}</option>`).join("");
+  }else{
+    sel.innerHTML = `<option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Both">Both</option>`;
+  }
+}
+populateWhatsAppTargets();
+
+const WA_TEMPLATES = {
+  reminder: { hi:(n)=>`प्रिय अभिभावक, ${n} की फीस बकाया है। कृपया जल्द भुगतान करें। धन्यवाद - Jivan Jyoti Classes`, en:(n)=>`Dear Parent, fee for ${n} is pending. Please pay soon. Thank you - Jivan Jyoti Classes`, hinglish:(n)=>`Dear Parent, ${n} ki fee pending hai. Please jaldi pay kar dein. Thanks - Jivan Jyoti Classes` },
+  admission: { hi:(n)=>`${n} का एडमिशन सफलतापूर्वक हो गया है। स्वागत है! - Jivan Jyoti Classes`, en:(n)=>`${n}'s admission is confirmed. Welcome! - Jivan Jyoti Classes`, hinglish:(n)=>`${n} ka admission confirm ho gaya hai. Welcome! - Jivan Jyoti Classes` },
+  holiday: { hi:()=>`सूचना: संस्थान कल अवकाश रहेगा। - Jivan Jyoti Classes`, en:()=>`Notice: Institute will remain closed tomorrow. - Jivan Jyoti Classes`, hinglish:()=>`Notice: Kal institute band rahega. - Jivan Jyoti Classes` },
+  exam: { hi:(n)=>`${n} की परीक्षा निर्धारित है। तैयारी अवश्य करें। - Jivan Jyoti Classes`, en:(n)=>`Exam scheduled for ${n}. Please prepare well. - Jivan Jyoti Classes`, hinglish:(n)=>`${n} ka exam schedule hai. Please prepare karein. - Jivan Jyoti Classes` },
+  birthday: { hi:(n)=>`${n} को जन्मदिन की हार्दिक शुभकामनाएं! - Jivan Jyoti Classes`, en:(n)=>`Happy Birthday ${n}! - Jivan Jyoti Classes`, hinglish:(n)=>`Happy Birthday ${n}! - Jivan Jyoti Classes` }
+};
+
+$("waGenerateBtn").addEventListener("click", ()=>{
+  const type = $("waTargetType").value, val = $("waTargetValue").value, tmpl = $("waTemplate").value, lang = $("waLang").value;
+  const name = type==="one" ? (state.students[val]?.name || "Student") : val;
+  $("waMessage").value = WA_TEMPLATES[tmpl][lang](name);
+});
+
+$("waSendBtn").addEventListener("click", async ()=>{
+  const type = $("waTargetType").value, val = $("waTargetValue").value;
+  const msg = $("waMessage").value;
+  if(!msg.trim()){ toast("पहले message generate करें","error"); return; }
+
+  let targets = [];
+  if(type==="one"){
+    const s = state.students[val];
+    if(s) targets = [s];
+  }else if(type==="class"){
+    targets = Object.values(state.students).filter(s=>s.class===val);
+  }else{
+    targets = Object.values(state.students).filter(s=> s.batch===val || s.batch==="Both");
+  }
+  if(!targets.length){ toast("कोई student नहीं मिला","error"); return; }
+
+  const first = targets[0];
+  const phone = (first.mobile||"").replace(/\D/g,"");
+  const countryCode = (state.settings.countryCode||"91").replace(/\D/g,"");
+  window.open(`https://wa.me/${countryCode}${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+
+  for(const s of targets){
+    await push(ref(db,"whatsapp_log"), {student:s.name, type:$("waTemplate").value, sentBy: state.currentUser.email, date:new Date().toISOString()});
+  }
+  logAudit("WhatsApp Sent", `${targets.length} students`);
+});
+
+function renderWaHistory(log){
+  const tbody = $("waHistoryTable").querySelector("tbody");
+  const list = Object.values(log).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20);
+  tbody.innerHTML = list.map(l=>`<tr><td>${(l.date||"").slice(0,16).replace("T"," ")}</td><td>${l.student}</td><td>${l.type}</td><td>${l.sentBy}</td></tr>`).join("") || `<tr><td colspan="4" class="empty-state">कोई history नहीं</td></tr>`;
+}
+
+/* =================================================================
+   USERS MODULE (Owner only)
+================================================================= */
+$("addUserBtn").addEventListener("click", ()=>{ $("userForm").reset(); openModal("userModal"); });
+$("userForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const name=$("uName").value.trim(), email=$("uEmail").value.trim(), pass=$("uPassword").value, role=$("uRole").value;
+  try{
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    await set(ref(db,"users/"+cred.user.uid), {name, email, role});
+    await signOut(secondaryAuth);
+    logAudit("User Created", `${name} (${role})`);
+    toast("User created!","success");
+    closeModal("userModal");
+  }catch(err){ toast("Error: "+err.message,"error"); }
+});
+function renderUsers(){
+  const tbody = $("usersTable").querySelector("tbody");
+  tbody.innerHTML = Object.entries(state.users).map(([uid,u])=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>—</td></tr>`).join("") || `<tr><td colspan="4" class="empty-state">कोई user नहीं</td></tr>`;
+}
+
+/* =================================================================
+   TRASH MODULE
+================================================================= */
+function renderTrash(){
+  const tbody = $("trashTable").querySelector("tbody");
+  let rows = [];
+  Object.entries(state.trash).forEach(([type, items])=>{
+    Object.entries(items||{}).forEach(([id,item])=>{
+      const label = item.name || item.category || id;
+      rows.push(`<tr><td>${type}</td><td>${label}</td><td>${item.deletedBy||""}</td><td>${(item.deletedDate||"").slice(0,10)}</td>
+        <td><button class="icon-action" onclick="window.restoreTrash('${type}','${id}')">♻️</button><button class="icon-action" onclick="window.permDeleteTrash('${type}','${id}')">❌</button></td></tr>`);
+    });
+  });
+  tbody.innerHTML = rows.join("") || `<tr><td colspan="5" class="empty-state">Trash खाली है</td></tr>`;
+}
+window.restoreTrash = async (type,id)=>{
+  if(state.role!=="Owner"){ toast("सिर्फ Owner restore कर सकता है","error"); return; }
+  const data = state.trash[type][id];
+  await set(ref(db,type+"/"+id), data);
+  await remove(ref(db,"trash/"+type+"/"+id));
+  logAudit("Restored from Trash", data.name||id);
+  toast("Restore हो गया","success");
+};
+window.permDeleteTrash = (type,id)=>{
+  if(state.role!=="Owner"){ toast("सिर्फ Owner permanent delete कर सकता है","error"); return; }
+  confirmAction({title:"Permanent Delete", msg:"यह स्थायी रूप से delete हो जाएगा, वापस नहीं आएगा।", requireType:true, onConfirm: async ()=>{
+    await remove(ref(db,"trash/"+type+"/"+id));
+    logAudit("Permanently Deleted", id);
+    toast("Permanently deleted","success");
+  }});
+};
+
+/* =================================================================
+   AUDIT LOG
+================================================================= */
+function renderAudit(){
+  const tbody = $("auditTable").querySelector("tbody");
+  const list = Object.values(state.audit).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,80);
+  tbody.innerHTML = list.map(a=>`<tr><td>${a.action}</td><td>${a.by}</td><td>${a.details||""}</td><td>${(a.date||"").slice(0,16).replace("T"," ")}</td></tr>`).join("") || `<tr><td colspan="4" class="empty-state">कोई log नहीं</td></tr>`;
+}
+
+/* =================================================================
+   SETTINGS
+================================================================= */
+function renderSettings(){
+  const s = state.settings || {};
+  $("setName").value = s.name||"Jivan Jyoti Classes";
+  $("setAddress").value = s.address||"";
+  $("setPhone").value = s.phone||"";
+  $("setEmail").value = s.email||"";
+  $("setFooter").value = s.receiptFooter||"";
+  $("setSession").value = s.session||"";
+  $("setCountryCode").value = s.countryCode||"91";
+}
+$("saveSettingsBtn").addEventListener("click", async ()=>{
+  if(state.role!=="Owner"){ toast("सिर्फ Owner settings बदल सकता है","error"); return; }
+  const data = {name:$("setName").value, address:$("setAddress").value, phone:$("setPhone").value, email:$("setEmail").value, receiptFooter:$("setFooter").value, session:$("setSession").value, countryCode:$("setCountryCode").value.trim()||"91"};
+  await set(ref(db,"settings/institute"), data);
+  logAudit("Settings Changed", "");
+  toast("Settings saved!","success");
+});
+$("backupBtn").addEventListener("click", async ()=>{
+  const snap = await get(ref(db));
+  const blob = new Blob([JSON.stringify(snap.val(), null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `backup_${todayStr()}.json`; a.click();
+  logAudit("Backup Exported", "");
+});
+</script>
+</body>
+</html>
