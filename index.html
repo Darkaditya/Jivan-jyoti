@@ -349,7 +349,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
         <div class="filters">
           <input type="date" id="attDate">
           <select id="attClass"><option value="">Class चुनें</option></select>
-          <select id="attBatch"><option value="">Batch चुनें</option><option>Morning</option><option>Evening</option><option>Both</option></select>
+          <select id="attBatch"><option value="">Batch चुनें</option><option value="All">All</option><option>Morning</option><option>Evening</option><option>Both</option></select>
           <button class="btn btn-outline btn-sm" id="attLoadBtn">Load Students</button>
         </div>
         <button class="btn btn-primary btn-sm" id="attSaveBtn">Save Attendance</button>
@@ -384,7 +384,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
       </div>
       <div class="glass table-wrap" style="padding:6px;">
         <table id="feesTable">
-          <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Paid Months</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -707,7 +707,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyCrEsrikoIG0_iLKfbqfdRwxn8-PyznGTg",
   authDomain: "jivan-jyoti-classes.firebaseapp.com",
-  databaseURL: "https://jivan-jyoti-classes-default-rtdb.firebaseio.com/", // ⚠ Firebase Console > Realtime Database > URL yahan paste karein
+  databaseURL: "https://jivan-jyoti-classes-default-rtdb.firebaseio.com",
   projectId: "jivan-jyoti-classes",
   storageBucket: "jivan-jyoti-classes.firebasestorage.app",
   messagingSenderId: "1033100341219",
@@ -860,7 +860,10 @@ onAuthStateChanged(auth, async (user)=>{
     }
     const profile = snap.val();
     state.currentUser = user;
-    state.role = profile.role || "Reception";
+    let rawRole = (profile.role || "Reception").toString().trim();
+    const knownRoles = ["Owner","Admin","Reception","Teacher"];
+    const matched = knownRoles.find(r => r.toLowerCase() === rawRole.toLowerCase());
+    state.role = matched || rawRole;
     $("sbUserName").textContent = profile.name || user.email;
     $("rolePill").textContent = state.role;
     applyRoleVisibility();
@@ -1098,12 +1101,13 @@ function renderStudents(){
     <tr>
       <td><img class="avatar-sm" src="${s.photoUrl||'https://via.placeholder.com/32?text=👤'}"></td>
       <td>${s.admissionNo||"—"}</td>
-      <td>${s.name}</td>
+      <td><a href="javascript:void(0)" onclick="window.viewStudentDetails('${id}')" style="color:var(--saffron);font-weight:600;text-decoration:underline;">${s.name}</a></td>
       <td>${s.class}</td>
       <td>${s.batch}</td>
       <td>${s.mobile}</td>
       <td><span class="badge ${s.status==='Active'?'green':(s.status==='Inactive'?'yellow':'red')}">${s.status}</span></td>
       <td>
+        <button class="icon-action" onclick="window.viewStudentDetails('${id}')">👁️</button>
         <button class="icon-action" onclick="window.editStudent('${id}')">✏️</button>
         <button class="icon-action" onclick="window.printIdCard('${id}')">🪪</button>
         <button class="icon-action" onclick="window.deleteStudent('${id}')">🗑️</button>
@@ -1134,8 +1138,55 @@ window.editStudent = (id)=>{
   openModal("studentModal");
 };
 
+window.viewStudentDetails = (id)=>{
+  const s = state.students[id];
+  if(!s){ toast("Student नहीं मिला","error"); return; }
+  const feeRecs = Object.values(state.fees[id]||{});
+  const totalPaid = feeRecs.reduce((sum,r)=>sum+Number(r.paid||0),0);
+  const due = feeRecs.length ? feeRecs[feeRecs.length-1].remainingDue||0 : 0;
+
+  const html = `
+  <div class="glass modal-box wide" style="max-width:700px;">
+    <div class="modal-head"><h3>${s.name} — Full Details</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;">
+      <img src="${s.photoUrl||'https://via.placeholder.com/90?text=Photo'}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;background:var(--line);flex-shrink:0;">
+      <div style="flex:1;min-width:220px;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;font-size:.86rem;">
+        <div><b>Admission No:</b> ${s.admissionNo||"—"}</div>
+        <div><b>Status:</b> ${s.status||"—"}</div>
+        <div><b>Class:</b> ${s.class||"—"}</div>
+        <div><b>Section:</b> ${s.section||"—"}</div>
+        <div><b>Batch:</b> ${s.batch||"—"}</div>
+        <div><b>Admission Date:</b> ${s.admissionDate||"—"}</div>
+        <div><b>Father Name:</b> ${s.father||"—"}</div>
+        <div><b>Mother Name:</b> ${s.mother||"—"}</div>
+        <div><b>Mobile:</b> ${s.mobile||"—"}</div>
+        <div><b>Guardian No:</b> ${s.guardian||"—"}</div>
+        <div><b>School:</b> ${s.school||"—"}</div>
+        <div><b>Subjects:</b> ${s.subjects||"—"}</div>
+        <div style="grid-column:1/-1;"><b>Address:</b> ${s.address||"—"}</div>
+        <div style="grid-column:1/-1;"><b>Notes:</b> ${s.notes||"—"}</div>
+      </div>
+    </div>
+    <hr style="margin:16px 0;border-color:var(--line);">
+    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:.9rem;">
+      <div><b>Total Paid:</b> ${fmt(totalPaid)}</div>
+      <div><b>Current Due:</b> ${fmt(due)}</div>
+      <div><b>Fee Records:</b> ${feeRecs.length}</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" onclick="window.viewFeeHistory('${id}'); this.closest('.modal-overlay').remove();">Fee History देखें</button>
+      <button class="btn btn-primary btn-sm" onclick="window.editStudent('${id}'); this.closest('.modal-overlay').remove();">Edit करें</button>
+    </div>
+  </div>`;
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = html;
+  overlay.addEventListener("click",(e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+};
+
 window.deleteStudent = (id)=>{
-  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  if(!["Owner","Admin"].includes(state.role)){ toast(`आपका role "${state.role}" है — Delete सिर्फ Owner/Admin कर सकते हैं`,"error"); return; }
   confirmAction({
     title:"Delete Student", msg:"यह student trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true,
     onConfirm: async ()=>{
@@ -1157,7 +1208,7 @@ function refreshAttClassStudents(){ /* placeholder for future cache refresh */ }
 $("attLoadBtn").addEventListener("click", ()=>{
   const cls = $("attClass").value, batch=$("attBatch").value;
   if(!cls||!batch){ toast("Class और Batch चुनें","error"); return; }
-  const list = Object.entries(state.students).filter(([,s])=> s.class===cls && (s.batch===batch||s.batch==="Both"));
+  const list = Object.entries(state.students).filter(([,s])=> s.class===cls && (batch==="All" || s.batch===batch || s.batch==="Both"));
   const tbody = $("attendanceTable").querySelector("tbody");
   tbody.innerHTML = list.map(([id,s])=>`
     <tr data-id="${id}">
@@ -1277,7 +1328,10 @@ function renderFees(){
     const recs = Object.values(state.fees[id]||{});
     const totalPaid = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
     const due = recs.length ? recs[recs.length-1].remainingDue||0 : 0;
-    return {id, s, totalPaid, due};
+    const paidMonths = [...new Set(recs.filter(r=>r.month).map(r=>r.month))]
+      .sort()
+      .map(m=> new Date(m+"-01").toLocaleString("default",{month:"short", year:"2-digit"}));
+    return {id, s, totalPaid, due, paidMonths};
   }).filter(r=>{
     if(search && !(`${r.s.name} ${r.s.admissionNo} ${r.s.mobile}`.toLowerCase().includes(search))) return false;
     if(duesFilter && r.due<=0) return false;
@@ -1286,12 +1340,14 @@ function renderFees(){
   const tbody = $("feesTable").querySelector("tbody");
   tbody.innerHTML = rows.map(r=>{
     let badge = r.due<=0 ? '<span class="badge green">Paid</span>' : (r.due<1000 ? '<span class="badge yellow">Due Soon</span>' : '<span class="badge red">Pending</span>');
+    const monthsText = r.paidMonths.length ? r.paidMonths.join(", ") : '<span style="color:var(--ink-soft);">—</span>';
     return `<tr>
       <td>${r.s.admissionNo}</td><td>${r.s.name}</td><td>${r.s.class}</td>
+      <td style="font-size:.78rem;max-width:180px;white-space:normal;">${monthsText}</td>
       <td>${fmt(r.totalPaid)}</td><td>${fmt(r.due)}</td><td>${badge}</td>
       <td><button class="icon-action" onclick="window.viewFeeHistory('${r.id}')">📜</button></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="7" class="empty-state">कोई record नहीं</td></tr>`;
+  }).join("") || `<tr><td colspan="8" class="empty-state">कोई record नहीं</td></tr>`;
 }
 ["feeSearch","duesFilter"].forEach(id=> $(id).addEventListener("input", renderFees));
 
@@ -1322,11 +1378,14 @@ window.printReceiptById = (studentId, rid)=>{
 function printReceipt(studentId, record){
   const s = state.students[studentId] || {};
   const inst = state.settings || {};
+  const instName = inst.name || "Jivan Jyoti Classes";
+  const instAddress = inst.address || "हवा महल, पाबेरा";
+  const instPhone = inst.phone || "";
   $("printArea").innerHTML = `
     <div class="receipt-a4">
       <div class="receipt-head">
         <img src="logo.jpeg">
-        <div><h2>${inst.name||"Jivan Jyoti Classes"}</h2><p>${inst.address||""} | ${inst.phone||""}</p></div>
+        <div><h2 style="font-size:1.5rem;font-weight:800;white-space:normal;">${instName}</h2><p>${instAddress}${instPhone?(" | Mob: "+instPhone):""}</p></div>
       </div>
       <div class="receipt-meta">
         <div>Receipt No: <b>${record.receiptNo}</b><br>Date: ${(record.date||"").slice(0,10)}</div>
@@ -1359,10 +1418,14 @@ function printReceipt(studentId, record){
 window.printIdCard = (id)=>{
   const s = state.students[id];
   const inst = state.settings || {};
+  const instName = inst.name || "Jivan Jyoti Classes";
+  const instAddress = inst.address || "हवा महल, पाबेरा";
+  const instPhone = inst.phone || "";
   $("printArea").innerHTML = `
     <div class="id-card">
       <img src="${s.photoUrl||'logo.jpeg'}" style="width:60px;height:60px;border-radius:50%;margin:6px auto;">
-      <h4 style="font-size:.85rem;">${inst.name||"Jivan Jyoti Classes"}</h4>
+      <h4 style="font-size:.85rem;font-weight:800;">${instName}</h4>
+      <p style="font-size:.65rem;color:#333;">${instAddress}${instPhone?(" | "+instPhone):""}</p>
       <p style="font-size:.75rem;"><b>${s.name}</b></p>
       <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${s.batch}<br>Session: ${inst.session||""}</p>
     </div>`;
@@ -1424,7 +1487,7 @@ window.editTeacher = (id)=>{
   openModal("teacherModal");
 };
 window.deleteTeacher = (id)=>{
-  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  if(!["Owner","Admin"].includes(state.role)){ toast(`आपका role "${state.role}" है — Delete सिर्फ Owner/Admin कर सकते हैं`,"error"); return; }
   confirmAction({title:"Delete Teacher", msg:"यह teacher trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
     const t = state.teachers[id];
     await set(ref(db,"trash/teachers/"+id), {...t, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
@@ -1464,7 +1527,7 @@ function renderExpenses(){
   $("expNetProfit").textContent = fmt(totalIncome-totalExpense);
 }
 window.deleteExpense = (id)=>{
-  if(!["Owner","Admin"].includes(state.role)){ toast("सिर्फ Owner/Admin delete कर सकते हैं","error"); return; }
+  if(!["Owner","Admin"].includes(state.role)){ toast(`आपका role "${state.role}" है — Delete सिर्फ Owner/Admin कर सकते हैं`,"error"); return; }
   confirmAction({title:"Delete Expense", msg:"यह expense trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
     const ex = state.expenses[id];
     await set(ref(db,"trash/expenses/"+id), {...ex, name:`${ex.category} - ${fmt(ex.amount)}`, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
@@ -1554,7 +1617,7 @@ function populateWhatsAppTargets(){
   }else if(type==="class"){
     sel.innerHTML = CLASSES.map(c=>`<option value="${c}">${c}</option>`).join("");
   }else{
-    sel.innerHTML = `<option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Both">Both</option>`;
+    sel.innerHTML = `<option value="All">All</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Both">Both</option>`;
   }
 }
 populateWhatsAppTargets();
@@ -1569,7 +1632,10 @@ const WA_TEMPLATES = {
 
 $("waGenerateBtn").addEventListener("click", ()=>{
   const type = $("waTargetType").value, val = $("waTargetValue").value, tmpl = $("waTemplate").value, lang = $("waLang").value;
-  const name = type==="one" ? (state.students[val]?.name || "Student") : val;
+  let name;
+  if(type==="one") name = state.students[val]?.name || "Student";
+  else if(val==="All") name = (lang==="en" ? "All Students" : "सभी विद्यार्थियों");
+  else name = val;
   $("waMessage").value = WA_TEMPLATES[tmpl][lang](name);
 });
 
@@ -1585,7 +1651,7 @@ $("waSendBtn").addEventListener("click", async ()=>{
   }else if(type==="class"){
     targets = Object.values(state.students).filter(s=>s.class===val);
   }else{
-    targets = Object.values(state.students).filter(s=> s.batch===val || s.batch==="Both");
+    targets = val==="All" ? Object.values(state.students) : Object.values(state.students).filter(s=> s.batch===val || s.batch==="Both");
   }
   if(!targets.length){ toast("कोई student नहीं मिला","error"); return; }
 
@@ -1674,7 +1740,7 @@ function renderAudit(){
 function renderSettings(){
   const s = state.settings || {};
   $("setName").value = s.name||"Jivan Jyoti Classes";
-  $("setAddress").value = s.address||"";
+  $("setAddress").value = s.address||"हवा महल, पाबेरा";
   $("setPhone").value = s.phone||"";
   $("setEmail").value = s.email||"";
   $("setFooter").value = s.receiptFooter||"";
