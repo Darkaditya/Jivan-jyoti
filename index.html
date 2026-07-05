@@ -505,7 +505,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
     <!-- ===================== TRASH ===================== -->
     <section class="view" id="view-trash">
       <div class="glass table-wrap" style="padding:6px;">
-        <table id="trashTable"><thead><tr><th>Type</th><th>Name</th><th>Deleted By</th><th>Deleted Date</th><th>Actions</th></tr></thead><tbody></tbody></table>
+        <table id="trashTable"><thead><tr><th>Type</th><th>Name</th><th>Deleted By</th><th>Deleted Date</th><th>Auto-Delete में</th><th>Actions</th></tr></thead><tbody></tbody></table>
       </div>
     </section>
 
@@ -565,6 +565,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
         <div class="field-sm"><label>Batch *</label><select id="sBatch" required><option>Morning</option><option>Evening</option><option>Both</option></select></div>
         <div class="field-sm"><label>Admission Date *</label><input type="date" id="sAdmDate" required></div>
         <div class="field-sm"><label>Status</label><select id="sStatus"><option>Active</option><option>Inactive</option><option>Left</option><option>Transfer</option></select></div>
+        <div class="field-sm"><label>Monthly Fee (₹) *</label><input type="number" id="sMonthlyFee" placeholder="जैसे 800" min="0"></div>
         <div class="field-sm full"><label>Address</label><input type="text" id="sAddress"></div>
         <div class="field-sm full"><label>Notes</label><textarea id="sNotes" rows="2"></textarea></div>
         <div class="field-sm full" id="admissionFeeToggleBox">
@@ -587,6 +588,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
     <div class="modal-head"><h3>Collect Fee</h3><button class="modal-close" data-close="feeModal">✕</button></div>
     <form id="feeForm">
       <div class="field-sm full" style="margin-bottom:14px;"><label>Student *</label><select id="feeStudent" required></select></div>
+      <div id="feeDueSummary" class="glass" style="padding:12px 14px;margin-bottom:14px;font-size:.82rem;display:none;"></div>
       <div class="form-grid">
         <div class="field-sm"><label>Admission Fee</label><input type="number" id="fAdmission" value="0"></div>
         <div class="field-sm"><label>Monthly Fee</label><input type="number" id="fMonthly" value="0"></div>
@@ -1061,6 +1063,7 @@ $("studentForm").addEventListener("submit", async (e)=>{
     batch: $("sBatch").value,
     admissionDate: $("sAdmDate").value,
     status: $("sStatus").value,
+    monthlyFee: Number($("sMonthlyFee").value||0),
     address: $("sAddress").value.trim(),
     notes: $("sNotes").value.trim()
   };
@@ -1094,6 +1097,7 @@ $("studentForm").addEventListener("submit", async (e)=>{
       setTimeout(()=>{
         $("feeForm").reset();
         $("feeStudent").value = studentId;
+        $("fMonthly").value = data.monthlyFee || 0;
         $("fMonth").value = thisMonthStr();
         recalcFeePreview();
         openModal("feeModal");
@@ -1155,7 +1159,7 @@ window.editStudent = (id)=>{
   $("sMobile").value=s.mobile||""; $("sGuardian").value=s.guardian||""; $("sSchool").value=s.school||"";
   $("sClass").value=s.class||""; $("sSection").value=s.section||""; $("sSubjects").value=s.subjects||"";
   $("sBatch").value=s.batch||"Morning"; $("sAdmDate").value=s.admissionDate||""; $("sStatus").value=s.status||"Active";
-  $("sAddress").value=s.address||""; $("sNotes").value=s.notes||"";
+  $("sMonthlyFee").value=s.monthlyFee||""; $("sAddress").value=s.address||""; $("sNotes").value=s.notes||"";
   $("studentPhotoPreview").src = s.photoUrl || "https://via.placeholder.com/70?text=Photo";
   editingStudentPhotoUrl = s.photoUrl||"";
   $("admissionFeeToggleBox").style.display = "none";
@@ -1165,9 +1169,11 @@ window.editStudent = (id)=>{
 window.viewStudentDetails = (id)=>{
   const s = state.students[id];
   if(!s){ toast("Student नहीं मिला","error"); return; }
-  const feeRecs = Object.values(state.fees[id]||{});
-  const totalPaid = feeRecs.reduce((sum,r)=>sum+Number(r.paid||0),0);
-  const due = feeRecs.length ? feeRecs[feeRecs.length-1].remainingDue||0 : 0;
+  const info = computeStudentDueInfo(id);
+  const lastPayText = info.lastPayment
+    ? `${fmt(info.lastPayment.paid)} (${(info.lastPayment.date||"").slice(0,10)}${info.lastPayment.month?", माह: "+formatMonthKey(info.lastPayment.month):""})`
+    : "कोई payment अभी तक नहीं";
+  const dueMonthsText = info.dueMonthsFormatted.length ? info.dueMonthsFormatted.join(", ") : "कोई नहीं";
 
   const html = `
   <div class="glass modal-box wide" style="max-width:700px;">
@@ -1192,10 +1198,13 @@ window.viewStudentDetails = (id)=>{
       </div>
     </div>
     <hr style="margin:16px 0;border-color:var(--line);">
-    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:.9rem;">
-      <div><b>Total Paid:</b> ${fmt(totalPaid)}</div>
-      <div><b>Current Due:</b> ${fmt(due)}</div>
-      <div><b>Fee Records:</b> ${feeRecs.length}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;font-size:.88rem;">
+      <div><b>Monthly Fee:</b> ${fmt(info.monthlyFee)}</div>
+      <div><b>Total Paid (अब तक):</b> ${fmt(info.totalPaid)}</div>
+      <div><b>Last Payment:</b> ${lastPayText}</div>
+      <div><b>Fee Records:</b> ${Object.keys(state.fees[id]||{}).length}</div>
+      <div style="grid-column:1/-1;"><b>Due Months:</b> <span style="color:${info.dueMonthsRaw.length?'var(--red)':'var(--green)'};font-weight:600;">${dueMonthsText}</span></div>
+      <div style="grid-column:1/-1;"><b>Total Due Amount:</b> <span style="color:var(--red);font-weight:700;">${fmt(info.totalDueAmount)}</span></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline btn-sm" onclick="window.viewFeeHistory('${id}'); this.closest('.modal-overlay').remove();">Fee History देखें</button>
@@ -1214,11 +1223,16 @@ window.deleteStudent = (id)=>{
   confirmAction({
     title:"Delete Student", msg:"यह student trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true,
     onConfirm: async ()=>{
-      const s = state.students[id];
-      await set(ref(db,"trash/students/"+id), {...s, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
-      await remove(ref(db,"students/"+id));
-      logAudit("Student Deleted", s.name);
-      toast("Student trash में भेज दिया गया","success");
+      try{
+        const s = state.students[id];
+        if(!s){ toast("Student नहीं मिला (शायद पहले ही delete हो चुका है)","error"); return; }
+        await set(ref(db,"trash/students/"+id), {...s, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+        await remove(ref(db,"students/"+id));
+        logAudit("Student Deleted", s.name);
+        toast("Student trash में भेज दिया गया","success");
+      }catch(err){
+        toast("Delete नहीं हो पाया: "+err.message, "error");
+      }
     }
   });
 };
@@ -1303,6 +1317,16 @@ $("collectFeeBtn").addEventListener("click", ()=>{
   openModal("feeModal");
 });
 
+$("feeStudent").addEventListener("change", ()=>{
+  const studentId = $("feeStudent").value;
+  const s = state.students[studentId];
+  if(s && s.monthlyFee){
+    $("fMonthly").value = s.monthlyFee;
+    recalcFeePreview();
+  }
+  renderFeeDueSummary(studentId);
+});
+
 ["fAdmission","fMonthly","fExam","fBooks","fTransport","fOther","fDiscount","fFine","fPrevDue","fPaid"].forEach(id=>{
   $(id).addEventListener("input", recalcFeePreview);
 });
@@ -1370,19 +1394,58 @@ function getDueMonths(admissionDate, paidMonthsSet){
   return due;
 }
 
+function formatMonthKey(m){
+  return new Date(m+"-01").toLocaleString("default",{month:"short", year:"2-digit"});
+}
+
+// Central helper: full due-info for one student (used in Fees table, Fee modal summary, WhatsApp reminders, student details)
+function computeStudentDueInfo(studentId){
+  const s = state.students[studentId];
+  const recs = Object.entries(state.fees[studentId]||{}).map(([rid,r])=>({...r, rid}));
+  const totalPaid = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
+  const lastExtraDue = recs.length ? Number(recs[recs.length-1].remainingDue||0) : 0;
+  const paidMonthsSet = new Set(recs.filter(r=>r.month).map(r=>r.month));
+  const dueMonthsRaw = s ? getDueMonths(s.admissionDate, paidMonthsSet) : [];
+  const monthlyFee = Number((s&&s.monthlyFee)||0);
+  const monthsDueAmount = dueMonthsRaw.length * monthlyFee;
+  const totalDueAmount = monthsDueAmount + lastExtraDue;
+  let lastPayment = null;
+  if(recs.length){
+    const sorted = [...recs].sort((a,b)=> new Date(b.date)-new Date(a.date));
+    lastPayment = sorted[0];
+  }
+  return {
+    s, totalPaid, lastExtraDue, dueMonthsRaw,
+    dueMonthsFormatted: dueMonthsRaw.map(formatMonthKey),
+    paidMonthsFormatted: [...paidMonthsSet].sort().map(formatMonthKey),
+    monthlyFee, monthsDueAmount, totalDueAmount, lastPayment
+  };
+}
+
+function renderFeeDueSummary(studentId){
+  const box = $("feeDueSummary");
+  if(!studentId){ box.style.display="none"; box.innerHTML=""; return; }
+  const info = computeStudentDueInfo(studentId);
+  const lastPayText = info.lastPayment
+    ? `${fmt(info.lastPayment.paid)} (${(info.lastPayment.date||"").slice(0,10)}${info.lastPayment.month?", माह: "+formatMonthKey(info.lastPayment.month):""})`
+    : "कोई payment अभी तक नहीं";
+  const dueMonthsText = info.dueMonthsFormatted.length ? info.dueMonthsFormatted.join(", ") : "कोई नहीं";
+  box.style.display = "block";
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+      <div><b>Last Payment:</b> ${lastPayText}</div>
+      <div><b>Monthly Fee:</b> ${fmt(info.monthlyFee)}</div>
+      <div style="grid-column:1/-1;"><b>Due Months:</b> <span style="color:${info.dueMonthsRaw.length?'var(--red)':'var(--green)'};font-weight:600;">${dueMonthsText}</span></div>
+      <div style="grid-column:1/-1;"><b>Total Due Amount:</b> <span style="color:var(--red);font-weight:700;">${fmt(info.totalDueAmount)}</span> ${info.lastExtraDue?`(इसमें ${fmt(info.lastExtraDue)} पिछला/अन्य due शामिल है)`:""}</div>
+    </div>`;
+}
+
 function renderFees(){
   const search = ($("feeSearch").value||"").toLowerCase();
   const duesFilter = $("duesFilter").value;
   const rows = Object.entries(state.students).map(([id,s])=>{
-    const recs = Object.values(state.fees[id]||{});
-    const totalPaid = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
-    const due = recs.length ? recs[recs.length-1].remainingDue||0 : 0;
-    const paidMonthsSet = new Set(recs.filter(r=>r.month).map(r=>r.month));
-    const paidMonths = [...paidMonthsSet].sort()
-      .map(m=> new Date(m+"-01").toLocaleString("default",{month:"short", year:"2-digit"}));
-    const dueMonths = getDueMonths(s.admissionDate, paidMonthsSet)
-      .map(m=> new Date(m+"-01").toLocaleString("default",{month:"short", year:"2-digit"}));
-    return {id, s, totalPaid, due, paidMonths, dueMonths};
+    const info = computeStudentDueInfo(id);
+    return {id, s, totalPaid: info.totalPaid, due: info.totalDueAmount, paidMonths: info.paidMonthsFormatted, dueMonths: info.dueMonthsFormatted};
   }).filter(r=>{
     if(search && !(`${r.s.name} ${r.s.admissionNo} ${r.s.mobile}`.toLowerCase().includes(search))) return false;
     if(duesFilter && r.due<=0) return false;
@@ -1542,11 +1605,14 @@ window.editTeacher = (id)=>{
 window.deleteTeacher = (id)=>{
   if(!["Owner","Admin"].includes(state.role)){ toast(`आपका role "${state.role}" है — Delete सिर्फ Owner/Admin कर सकते हैं`,"error"); return; }
   confirmAction({title:"Delete Teacher", msg:"यह teacher trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
-    const t = state.teachers[id];
-    await set(ref(db,"trash/teachers/"+id), {...t, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
-    await remove(ref(db,"teachers/"+id));
-    logAudit("Teacher Deleted", t.name);
-    toast("Teacher trash में भेज दिया गया","success");
+    try{
+      const t = state.teachers[id];
+      if(!t){ toast("Teacher नहीं मिला","error"); return; }
+      await set(ref(db,"trash/teachers/"+id), {...t, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+      await remove(ref(db,"teachers/"+id));
+      logAudit("Teacher Deleted", t.name);
+      toast("Teacher trash में भेज दिया गया","success");
+    }catch(err){ toast("Delete नहीं हो पाया: "+err.message, "error"); }
   }});
 };
 
@@ -1582,11 +1648,14 @@ function renderExpenses(){
 window.deleteExpense = (id)=>{
   if(!["Owner","Admin"].includes(state.role)){ toast(`आपका role "${state.role}" है — Delete सिर्फ Owner/Admin कर सकते हैं`,"error"); return; }
   confirmAction({title:"Delete Expense", msg:"यह expense trash में move हो जाएगा (30 दिन तक रखा जाएगा)।", requireType:true, onConfirm: async ()=>{
-    const ex = state.expenses[id];
-    await set(ref(db,"trash/expenses/"+id), {...ex, name:`${ex.category} - ${fmt(ex.amount)}`, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
-    await remove(ref(db,"expenses/"+id));
-    logAudit("Expense Deleted", id);
-    toast("Expense trash में भेज दिया गया","success");
+    try{
+      const ex = state.expenses[id];
+      if(!ex){ toast("Expense नहीं मिला","error"); return; }
+      await set(ref(db,"trash/expenses/"+id), {...ex, name:`${ex.category} - ${fmt(ex.amount)}`, deletedBy: state.currentUser.email, deletedDate: new Date().toISOString()});
+      await remove(ref(db,"expenses/"+id));
+      logAudit("Expense Deleted", id);
+      toast("Expense trash में भेज दिया गया","success");
+    }catch(err){ toast("Delete नहीं हो पाया: "+err.message, "error"); }
   }});
 };
 
@@ -1676,7 +1745,11 @@ function populateWhatsAppTargets(){
 populateWhatsAppTargets();
 
 const WA_TEMPLATES = {
-  reminder: { hi:(n)=>`प्रिय अभिभावक, ${n} की फीस बकाया है। कृपया जल्द भुगतान करें। धन्यवाद - Jivan Jyoti Classes`, en:(n)=>`Dear Parent, fee for ${n} is pending. Please pay soon. Thank you - Jivan Jyoti Classes`, hinglish:(n)=>`Dear Parent, ${n} ki fee pending hai. Please jaldi pay kar dein. Thanks - Jivan Jyoti Classes` },
+  reminder: {
+    hi:(n,extra)=>`प्रिय अभिभावक, ${n} की फीस बकाया है।${extra?` बकाया माह: ${extra.months}। कुल बकाया राशि: ₹${extra.total}।`:""} कृपया जल्द भुगतान करें। धन्यवाद - Jivan Jyoti Classes`,
+    en:(n,extra)=>`Dear Parent, fee for ${n} is pending.${extra?` Pending months: ${extra.months}. Total due: ₹${extra.total}.`:""} Please pay soon. Thank you - Jivan Jyoti Classes`,
+    hinglish:(n,extra)=>`Dear Parent, ${n} ki fee pending hai.${extra?` Pending months: ${extra.months}. Total due: ₹${extra.total}.`:""} Please jaldi pay kar dein. Thanks - Jivan Jyoti Classes`
+  },
   admission: { hi:(n)=>`${n} का एडमिशन सफलतापूर्वक हो गया है। स्वागत है! - Jivan Jyoti Classes`, en:(n)=>`${n}'s admission is confirmed. Welcome! - Jivan Jyoti Classes`, hinglish:(n)=>`${n} ka admission confirm ho gaya hai. Welcome! - Jivan Jyoti Classes` },
   holiday: { hi:()=>`सूचना: संस्थान कल अवकाश रहेगा। - Jivan Jyoti Classes`, en:()=>`Notice: Institute will remain closed tomorrow. - Jivan Jyoti Classes`, hinglish:()=>`Notice: Kal institute band rahega. - Jivan Jyoti Classes` },
   exam: { hi:(n)=>`${n} की परीक्षा निर्धारित है। तैयारी अवश्य करें। - Jivan Jyoti Classes`, en:(n)=>`Exam scheduled for ${n}. Please prepare well. - Jivan Jyoti Classes`, hinglish:(n)=>`${n} ka exam schedule hai. Please prepare karein. - Jivan Jyoti Classes` },
@@ -1685,11 +1758,17 @@ const WA_TEMPLATES = {
 
 $("waGenerateBtn").addEventListener("click", ()=>{
   const type = $("waTargetType").value, val = $("waTargetValue").value, tmpl = $("waTemplate").value, lang = $("waLang").value;
-  let name;
-  if(type==="one") name = state.students[val]?.name || "Student";
+  let name, extra=null;
+  if(type==="one"){
+    name = state.students[val]?.name || "Student";
+    if(tmpl==="reminder" && val){
+      const info = computeStudentDueInfo(val);
+      extra = { months: info.dueMonthsFormatted.length?info.dueMonthsFormatted.join(", "):"—", total: info.totalDueAmount };
+    }
+  }
   else if(val==="All") name = (lang==="en" ? "All Students" : "सभी विद्यार्थियों");
   else name = val;
-  $("waMessage").value = WA_TEMPLATES[tmpl][lang](name);
+  $("waMessage").value = WA_TEMPLATES[tmpl][lang](name, extra);
 });
 
 $("waSendBtn").addEventListener("click", async ()=>{
@@ -1750,31 +1829,57 @@ function renderUsers(){
    TRASH MODULE
 ================================================================= */
 function renderTrash(){
+  autoPurgeExpiredTrash();
   const tbody = $("trashTable").querySelector("tbody");
   let rows = [];
   Object.entries(state.trash).forEach(([type, items])=>{
     Object.entries(items||{}).forEach(([id,item])=>{
       const label = item.name || item.category || id;
-      rows.push(`<tr><td>${type}</td><td>${label}</td><td>${item.deletedBy||""}</td><td>${(item.deletedDate||"").slice(0,10)}</td>
+      const deletedDate = new Date(item.deletedDate || Date.now());
+      const daysLeft = Math.max(0, 30 - Math.floor((Date.now()-deletedDate.getTime())/(1000*60*60*24)));
+      rows.push(`<tr><td>${type}</td><td>${label}</td><td>${item.deletedBy||""}</td><td>${(item.deletedDate||"").slice(0,10)}</td><td>${daysLeft} दिन बाकी</td>
         <td><button class="icon-action" onclick="window.restoreTrash('${type}','${id}')">♻️</button><button class="icon-action" onclick="window.permDeleteTrash('${type}','${id}')">❌</button></td></tr>`);
     });
   });
-  tbody.innerHTML = rows.join("") || `<tr><td colspan="5" class="empty-state">Trash खाली है</td></tr>`;
+  tbody.innerHTML = rows.join("") || `<tr><td colspan="6" class="empty-state">Trash खाली है</td></tr>`;
 }
+
+async function autoPurgeExpiredTrash(){
+  if(!["Owner","Admin"].includes(state.role)) return; // only privileged roles can purge (matches delete rules)
+  const now = Date.now();
+  const THIRTY_DAYS = 30*24*60*60*1000;
+  for(const [type, items] of Object.entries(state.trash)){
+    for(const [id,item] of Object.entries(items||{})){
+      const deletedTime = new Date(item.deletedDate || 0).getTime();
+      if(now - deletedTime > THIRTY_DAYS){
+        try{
+          await remove(ref(db, "trash/"+type+"/"+id));
+          logAudit("Auto-Purged (30 days)", `${type}: ${item.name||item.category||id}`);
+        }catch(err){ /* silent - will retry next load */ }
+      }
+    }
+  }
+}
+
 window.restoreTrash = async (type,id)=>{
   if(state.role!=="Owner"){ toast("सिर्फ Owner restore कर सकता है","error"); return; }
-  const data = state.trash[type][id];
-  await set(ref(db,type+"/"+id), data);
-  await remove(ref(db,"trash/"+type+"/"+id));
-  logAudit("Restored from Trash", data.name||id);
-  toast("Restore हो गया","success");
+  try{
+    const data = state.trash[type][id];
+    if(!data){ toast("Record नहीं मिला","error"); return; }
+    await set(ref(db,type+"/"+id), data);
+    await remove(ref(db,"trash/"+type+"/"+id));
+    logAudit("Restored from Trash", data.name||id);
+    toast("Restore हो गया","success");
+  }catch(err){ toast("Restore नहीं हो पाया: "+err.message,"error"); }
 };
 window.permDeleteTrash = (type,id)=>{
   if(state.role!=="Owner"){ toast("सिर्फ Owner permanent delete कर सकता है","error"); return; }
   confirmAction({title:"Permanent Delete", msg:"यह स्थायी रूप से delete हो जाएगा, वापस नहीं आएगा।", requireType:true, onConfirm: async ()=>{
-    await remove(ref(db,"trash/"+type+"/"+id));
-    logAudit("Permanently Deleted", id);
-    toast("Permanently deleted","success");
+    try{
+      await remove(ref(db,"trash/"+type+"/"+id));
+      logAudit("Permanently Deleted", id);
+      toast("Permanently deleted","success");
+    }catch(err){ toast("Delete नहीं हो पाया: "+err.message,"error"); }
   }});
 };
 
