@@ -876,6 +876,19 @@ onAuthStateChanged(auth, async (user)=>{
     const knownRoles = ["Owner","Admin","Reception","Teacher"];
     const matched = knownRoles.find(r => r.toLowerCase() === rawRole.toLowerCase());
     state.role = matched || rawRole;
+
+    // Self-heal: if role in DB has wrong case/spacing (e.g. "owner " instead of "Owner"),
+    // Firebase security rules do exact string matching and will silently block writes/deletes.
+    // Since a user can always write to their own users/{uid} node, auto-correct it here.
+    if(matched && matched !== profile.role){
+      try{
+        await update(ref(db, "users/"+user.uid), { role: matched });
+        console.log("Role auto-corrected from '"+profile.role+"' to '"+matched+"'");
+      }catch(err){
+        console.warn("Could not auto-correct role casing:", err.message);
+      }
+    }
+
     $("sbUserName").textContent = profile.name || user.email;
     $("rolePill").textContent = state.role;
     applyRoleVisibility();
