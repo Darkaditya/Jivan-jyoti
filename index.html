@@ -528,6 +528,22 @@ tr:hover td{background:rgba(232,116,28,.05);}
           <div class="field-sm full"><label>Receipt Footer</label><input type="text" id="setFooter"></div>
           <div class="field-sm"><label>Academic Session</label><input type="text" id="setSession" placeholder="2026-27"></div>
           <div class="field-sm"><label>WhatsApp Country Code</label><input type="text" id="setCountryCode" placeholder="91" maxlength="4"></div>
+          <div class="field-sm full">
+            <label>Morning Batch Timing</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="time" id="setMorningStart" style="flex:1;">
+              <span style="color:var(--ink-soft);">से</span>
+              <input type="time" id="setMorningEnd" style="flex:1;">
+            </div>
+          </div>
+          <div class="field-sm full">
+            <label>Evening Batch Timing</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="time" id="setEveningStart" style="flex:1;">
+              <span style="color:var(--ink-soft);">से</span>
+              <input type="time" id="setEveningEnd" style="flex:1;">
+            </div>
+          </div>
         </div>
         <div class="modal-foot"><button class="btn btn-primary btn-sm" id="saveSettingsBtn">Save Settings</button></div>
       </div>
@@ -1143,7 +1159,7 @@ function renderStudents(){
       <td>${s.admissionNo||"—"}</td>
       <td><a href="javascript:void(0)" onclick="window.viewStudentDetails('${id}')" style="color:var(--saffron);font-weight:600;text-decoration:underline;">${s.name}</a></td>
       <td>${s.class}</td>
-      <td>${s.batch}</td>
+      <td>${getBatchLabel(s.batch)}</td>
       <td>${s.mobile}</td>
       <td><span class="badge ${s.status==='Active'?'green':(s.status==='Inactive'?'yellow':'red')}">${s.status}</span></td>
       <td>
@@ -1198,7 +1214,7 @@ window.viewStudentDetails = (id)=>{
         <div><b>Status:</b> ${s.status||"—"}</div>
         <div><b>Class:</b> ${s.class||"—"}</div>
         <div><b>Section:</b> ${s.section||"—"}</div>
-        <div><b>Batch:</b> ${s.batch||"—"}</div>
+        <div><b>Batch:</b> ${getBatchLabel(s.batch)||"—"}</div>
         <div><b>Admission Date:</b> ${s.admissionDate||"—"}</div>
         <div><b>Father Name:</b> ${s.father||"—"}</div>
         <div><b>Mother Name:</b> ${s.mother||"—"}</div>
@@ -1518,7 +1534,7 @@ function printReceipt(studentId, record){
       </div>
       <div class="receipt-meta">
         <div>Receipt No: <b>${record.receiptNo}</b><br>Date: ${(record.date||"").slice(0,10)}</div>
-        <div>Student: <b>${s.name}</b><br>Adm No: ${s.admissionNo} | Class: ${s.class} | Batch: ${s.batch}</div>
+        <div>Student: <b>${s.name}</b><br>Adm No: ${s.admissionNo} | Class: ${s.class} | Batch: ${getBatchLabel(s.batch)}</div>
       </div>
       <table class="receipt-table">
         <tr><th>Particular</th><th>Amount</th></tr>
@@ -1556,7 +1572,7 @@ window.printIdCard = (id)=>{
       <h4 style="font-size:.85rem;font-weight:800;">${instName}</h4>
       <p style="font-size:.65rem;color:#333;">${instAddress}${instPhone?(" | "+instPhone):""}</p>
       <p style="font-size:.75rem;"><b>${s.name}</b></p>
-      <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${s.batch}<br>Session: ${inst.session||""}</p>
+      <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${getBatchLabel(s.batch)}<br>Session: ${inst.session||""}</p>
     </div>`;
   window.print();
 };
@@ -1917,14 +1933,52 @@ function renderSettings(){
   $("setFooter").value = s.receiptFooter||"";
   $("setSession").value = s.session||"";
   $("setCountryCode").value = s.countryCode||"91";
+  $("setMorningStart").value = s.morningStart||"07:00";
+  $("setMorningEnd").value = s.morningEnd||"09:00";
+  $("setEveningStart").value = s.eveningStart||"15:00";
+  $("setEveningEnd").value = s.eveningEnd||"17:00";
+  updateBatchTimeLabels();
 }
 $("saveSettingsBtn").addEventListener("click", async ()=>{
   if(state.role!=="Owner"){ toast("सिर्फ Owner settings बदल सकता है","error"); return; }
-  const data = {name:$("setName").value, address:$("setAddress").value, phone:$("setPhone").value, email:$("setEmail").value, receiptFooter:$("setFooter").value, session:$("setSession").value, countryCode:$("setCountryCode").value.trim()||"91"};
+  const data = {
+    name:$("setName").value, address:$("setAddress").value, phone:$("setPhone").value, email:$("setEmail").value,
+    receiptFooter:$("setFooter").value, session:$("setSession").value, countryCode:$("setCountryCode").value.trim()||"91",
+    morningStart:$("setMorningStart").value, morningEnd:$("setMorningEnd").value,
+    eveningStart:$("setEveningStart").value, eveningEnd:$("setEveningEnd").value
+  };
   await set(ref(db,"settings/institute"), data);
   logAudit("Settings Changed", "");
   toast("Settings saved!","success");
 });
+
+// Convert 24hr "HH:MM" (from <input type=time>) to friendly 12hr "h:MM AM/PM"
+function formatTime12hr(t24){
+  if(!t24) return "";
+  const [h,m] = t24.split(":").map(Number);
+  const period = h>=12 ? "PM" : "AM";
+  const h12 = h%12===0 ? 12 : h%12;
+  return `${h12}:${String(m).padStart(2,"0")} ${period}`;
+}
+
+// Show configured batch timings next to Morning/Evening options wherever batch is selectable
+function getBatchLabel(batchName){
+  const s = state.settings || {};
+  const morningRange = (s.morningStart && s.morningEnd) ? `${formatTime12hr(s.morningStart)} - ${formatTime12hr(s.morningEnd)}` : "";
+  const eveningRange = (s.eveningStart && s.eveningEnd) ? `${formatTime12hr(s.eveningStart)} - ${formatTime12hr(s.eveningEnd)}` : "";
+  if(batchName==="Morning" && morningRange) return `Morning (${morningRange})`;
+  if(batchName==="Evening" && eveningRange) return `Evening (${eveningRange})`;
+  if(batchName==="Both" && (morningRange||eveningRange)) return `Both (${morningRange||"?"} / ${eveningRange||"?"})`;
+  return batchName;
+}
+function updateBatchTimeLabels(){
+  document.querySelectorAll('select#sBatch option, select#filterBatch option, select#attBatch option').forEach(opt=>{
+    const val = opt.value || opt.textContent;
+    if(["Morning","Evening","Both"].includes(val)){
+      opt.textContent = getBatchLabel(val);
+    }
+  });
+}
 $("backupBtn").addEventListener("click", async ()=>{
   const snap = await get(ref(db));
   const blob = new Blob([JSON.stringify(snap.val(), null, 2)], {type:"application/json"});
