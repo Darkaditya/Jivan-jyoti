@@ -206,6 +206,13 @@ tr:hover td{background:rgba(232,116,28,.05);}
 .receipt-table td,.receipt-table th{border:1px solid #999;padding:6px 8px;}
 .receipt-foot{display:flex;justify-content:space-between;font-size:.78rem;margin-top:24px;}
 .id-card{width:54mm;height:86mm;border:1px solid #333;border-radius:8px;padding:8px;display:inline-block;margin:6px;font-family:Arial;text-align:center;color:#000;}
+.mini-slip-grid{width:190mm;margin:8mm auto;display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.mini-slip{border:1px dashed #333;padding:10px 12px;font-size:.75rem;color:#000;font-family:Arial,sans-serif;}
+.mini-slip-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.mini-slip-head img{width:32px;height:32px;border-radius:50%;}
+.mini-slip-head b{font-size:.82rem;}
+.mini-slip-head span{font-size:.65rem;color:#333;}
+.mini-slip hr{border:none;border-top:1px dashed #999;margin:6px 0;}
 
 @media(max-width:880px){
   #app.show{grid-template-columns:1fr;}
@@ -380,11 +387,14 @@ tr:hover td{background:rgba(232,116,28,.05);}
             <option value="30">30 Days Due</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-sm" id="collectFeeBtn">+ Collect Fee</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" id="printSelectedBillsBtn">🖨️ Print Selected Bills</button>
+          <button class="btn btn-primary btn-sm" id="collectFeeBtn">+ Collect Fee</button>
+        </div>
       </div>
       <div class="glass table-wrap" style="padding:6px;">
         <table id="feesTable">
-          <thead><tr><th>Adm No</th><th>Name</th><th>Class</th><th>Paid Months</th><th>Due Months</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="feeSelectAll"></th><th>Adm No</th><th>Name</th><th>Class</th><th>Paid Months</th><th>Due Months</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -603,7 +613,11 @@ tr:hover td{background:rgba(232,116,28,.05);}
   <div class="glass modal-box wide">
     <div class="modal-head"><h3>Collect Fee</h3><button class="modal-close" data-close="feeModal">✕</button></div>
     <form id="feeForm">
-      <div class="field-sm full" style="margin-bottom:14px;"><label>Student *</label><select id="feeStudent" required></select></div>
+      <div class="field-sm full" style="margin-bottom:8px;">
+        <label>Student खोजें (नाम / Adm No / Mobile)</label>
+        <input type="text" id="feeStudentSearch" placeholder="टाइप करें...">
+      </div>
+      <div class="field-sm full" style="margin-bottom:14px;"><label>Student *</label><select id="feeStudent" required size="1"></select></div>
       <div id="feeDueSummary" class="glass" style="padding:12px 14px;margin-bottom:14px;font-size:.82rem;display:none;"></div>
       <div class="form-grid">
         <div class="field-sm"><label>Admission Fee</label><input type="number" id="fAdmission" value="0"></div>
@@ -1335,14 +1349,28 @@ $("attReportBtn").addEventListener("click", async ()=>{
 ================================================================= */
 function refreshFeeStudentDropdown(){
   const sel = $("feeStudent");
-  sel.innerHTML = `<option value="">-- Student चुनें --</option>` + Object.entries(state.students).map(([id,s])=>`<option value="${id}">${s.name} (${s.admissionNo}) - ${s.class}</option>`).join("");
+  sel.innerHTML = `<option value="">-- Student चुनें --</option>` + Object.entries(state.students).map(([id,s])=>
+    `<option value="${id}" data-search="${(s.name+" "+(s.admissionNo||"")+" "+(s.mobile||"")).toLowerCase()}">${s.name} (${s.admissionNo}) - ${s.class}</option>`
+  ).join("");
 }
+
+$("feeStudentSearch").addEventListener("input", ()=>{
+  const q = $("feeStudentSearch").value.trim().toLowerCase();
+  $("feeStudent").querySelectorAll("option").forEach(opt=>{
+    if(!opt.value){ opt.style.display=""; return; } // always show placeholder
+    const match = !q || (opt.dataset.search||"").includes(q);
+    opt.style.display = match ? "" : "none";
+  });
+});
 
 $("collectFeeBtn").addEventListener("click", ()=>{
   $("feeForm").reset();
   $("feeStudent").value = "";
+  $("feeStudentSearch").value = "";
+  $("feeStudent").querySelectorAll("option").forEach(opt=> opt.style.display="");
   $("fMonth").value = thisMonthStr();
   recalcFeePreview();
+  renderFeeDueSummary("");
   openModal("feeModal");
 });
 
@@ -1436,6 +1464,13 @@ function computeStudentDueInfo(studentId){
   const paidMonthsSet = new Set(recs.filter(r=>r.month).map(r=>r.month));
   const dueMonthsRaw = s ? getDueMonths(s.admissionDate, paidMonthsSet) : [];
   const monthlyFee = Number((s&&s.monthlyFee)||0);
+
+  const currentMonthKey = thisMonthStr();
+  const oldDueMonthsRaw = dueMonthsRaw.filter(m => m !== currentMonthKey);
+  const currentMonthDueRaw = dueMonthsRaw.filter(m => m === currentMonthKey);
+  const oldDueAmount = oldDueMonthsRaw.length * monthlyFee;
+  const currentMonthDueAmount = currentMonthDueRaw.length * monthlyFee;
+
   const monthsDueAmount = dueMonthsRaw.length * monthlyFee;
   const totalDueAmount = monthsDueAmount + lastExtraDue;
   let lastPayment = null;
@@ -1446,6 +1481,9 @@ function computeStudentDueInfo(studentId){
   return {
     s, totalPaid, lastExtraDue, dueMonthsRaw,
     dueMonthsFormatted: dueMonthsRaw.map(formatMonthKey),
+    oldDueMonthsFormatted: oldDueMonthsRaw.map(formatMonthKey),
+    currentMonthDueFormatted: currentMonthDueRaw.map(formatMonthKey),
+    oldDueAmount, currentMonthDueAmount,
     paidMonthsFormatted: [...paidMonthsSet].sort().map(formatMonthKey),
     monthlyFee, monthsDueAmount, totalDueAmount, lastPayment
   };
@@ -1458,14 +1496,17 @@ function renderFeeDueSummary(studentId){
   const lastPayText = info.lastPayment
     ? `${fmt(info.lastPayment.paid)} (${(info.lastPayment.date||"").slice(0,10)}${info.lastPayment.month?", माह: "+formatMonthKey(info.lastPayment.month):""})`
     : "कोई payment अभी तक नहीं";
-  const dueMonthsText = info.dueMonthsFormatted.length ? info.dueMonthsFormatted.join(", ") : "कोई नहीं";
+  const oldDueText = info.oldDueMonthsFormatted.length ? info.oldDueMonthsFormatted.join(", ") : "कोई नहीं";
+  const currentDueText = info.currentMonthDueFormatted.length ? info.currentMonthDueFormatted.join(", ") : "इस महीने का भुगतान हो चुका है";
   box.style.display = "block";
   box.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
       <div><b>Last Payment:</b> ${lastPayText}</div>
       <div><b>Monthly Fee:</b> ${fmt(info.monthlyFee)}</div>
-      <div style="grid-column:1/-1;"><b>Due Months:</b> <span style="color:${info.dueMonthsRaw.length?'var(--red)':'var(--green)'};font-weight:600;">${dueMonthsText}</span></div>
-      <div style="grid-column:1/-1;"><b>Total Due Amount:</b> <span style="color:var(--red);font-weight:700;">${fmt(info.totalDueAmount)}</span> ${info.lastExtraDue?`(इसमें ${fmt(info.lastExtraDue)} पिछला/अन्य due शामिल है)`:""}</div>
+      <div><b>Old Due (पिछले महीनों का):</b> <span style="color:${info.oldDueMonthsFormatted.length?'var(--red)':'var(--green)'};font-weight:600;">${oldDueText}</span> — ${fmt(info.oldDueAmount)}</div>
+      <div><b>This Month Due:</b> <span style="color:${info.currentMonthDueFormatted.length?'var(--red)':'var(--green)'};font-weight:600;">${currentDueText}</span> ${info.currentMonthDueAmount?("— "+fmt(info.currentMonthDueAmount)):""}</div>
+      <div style="grid-column:1/-1;">${info.lastExtraDue?`<b>अन्य/पिछला Due (admission/exam आदि):</b> ${fmt(info.lastExtraDue)}<br>`:""}</div>
+      <div style="grid-column:1/-1;padding-top:6px;border-top:1px dashed var(--line);"><b>कुल मिलाकर Total Due Amount:</b> <span style="color:var(--red);font-weight:700;font-size:1.05rem;">${fmt(info.totalDueAmount)}</span></div>
     </div>`;
 }
 
@@ -1486,24 +1527,72 @@ function renderFees(){
     const monthsText = r.paidMonths.length ? r.paidMonths.join(", ") : '<span style="color:var(--ink-soft);">—</span>';
     const dueMonthsText = r.dueMonths.length ? `<span style="color:var(--red);font-weight:600;">${r.dueMonths.join(", ")}</span>` : '<span style="color:var(--green);">कोई नहीं</span>';
     return `<tr>
+      <td><input type="checkbox" class="fee-select-check" value="${r.id}"></td>
       <td>${r.s.admissionNo}</td><td>${r.s.name}</td><td>${r.s.class}</td>
       <td style="font-size:.78rem;max-width:160px;white-space:normal;">${monthsText}</td>
       <td style="font-size:.78rem;max-width:160px;white-space:normal;">${dueMonthsText}</td>
       <td>${fmt(r.totalPaid)}</td><td>${fmt(r.due)}</td><td>${badge}</td>
       <td><button class="icon-action" onclick="window.viewFeeHistory('${r.id}')">📜</button></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="9" class="empty-state">कोई record नहीं</td></tr>`;
+  }).join("") || `<tr><td colspan="10" class="empty-state">कोई record नहीं</td></tr>`;
 }
 ["feeSearch","duesFilter"].forEach(id=> $(id).addEventListener("input", renderFees));
+$("feeSelectAll").addEventListener("change", (e)=>{
+  document.querySelectorAll(".fee-select-check").forEach(c=> c.checked = e.target.checked);
+});
+
+$("printSelectedBillsBtn").addEventListener("click", ()=>{
+  const selectedIds = [...document.querySelectorAll(".fee-select-check:checked")].map(c=>c.value);
+  if(!selectedIds.length){ toast("कम से कम एक student select करें","error"); return; }
+  printMultipleBills(selectedIds);
+});
+
+function printMultipleBills(studentIds){
+  const inst = state.settings || {};
+  const instName = inst.name || "Jivan Jyoti Classes";
+  const instAddress = inst.address || "हवा महल, पभेरा (पटना)";
+  const instPhone = inst.phone || "9122367624, 9507292656";
+
+  const slips = studentIds.map(studentId=>{
+    const s = state.students[studentId];
+    const recs = Object.values(state.fees[studentId]||{});
+    if(!s || !recs.length) return "";
+    const last = recs[recs.length-1];
+    return `
+      <div class="mini-slip">
+        <div class="mini-slip-head">
+          <img src="logo.jpeg">
+          <div><b>${instName}</b><br><span>${instAddress}</span><br><span>Mob: ${instPhone}</span></div>
+        </div>
+        <hr>
+        <div><b>Receipt:</b> ${last.receiptNo}</div>
+        <div><b>Student:</b> ${s.name} (${s.admissionNo})</div>
+        <div><b>Class:</b> ${s.class} | <b>Batch:</b> ${getBatchLabel(s.batch)}</div>
+        ${last.month?`<div><b>माह:</b> ${formatMonthKey(last.month)}</div>`:""}
+        <div><b>Paid:</b> ${fmt(last.paid)}</div>
+        <div><b>Due:</b> ${fmt(last.remainingDue)}</div>
+        <div><b>Date:</b> ${(last.date||"").slice(0,10)}</div>
+        <div style="margin-top:10px;font-size:.7rem;text-align:right;">Signature: ______</div>
+      </div>`;
+  }).filter(Boolean).join("");
+
+  if(!slips){ toast("Selected students का कोई fee record नहीं मिला","error"); return; }
+
+  $("printArea").innerHTML = `<div class="mini-slip-grid">${slips}</div>`;
+  window.print();
+}
 
 window.viewFeeHistory = (studentId)=>{
   const recs = Object.entries(state.fees[studentId]||{});
   if(!recs.length){ toast("कोई fee history नहीं","info"); return; }
   const s = state.students[studentId];
-  let html = `<div class="glass modal-box wide" style="max-width:700px;"><div class="modal-head"><h3>${s.name} — Fee History</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
-  <div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Month</th><th>Paid</th><th>Due</th><th>Mode</th><th>Date</th><th>Print</th></tr></thead><tbody>`;
+  let html = `<div class="glass modal-box wide" style="max-width:760px;"><div class="modal-head"><h3>${s.name} — Fee History</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Receipt</th><th>Month</th><th>Paid</th><th>Due</th><th>Mode</th><th>Date</th><th>Actions</th></tr></thead><tbody>`;
   recs.forEach(([rid,r])=>{
-    html += `<tr><td>${r.receiptNo}</td><td>${r.month||""}</td><td>${fmt(r.paid)}</td><td>${fmt(r.remainingDue)}</td><td>${r.mode}</td><td>${(r.date||"").slice(0,10)}</td><td><button class="icon-action" onclick='window.printReceiptById("${studentId}","${rid}")'>🖨️</button></td></tr>`;
+    html += `<tr><td>${r.receiptNo}</td><td>${r.month||""}</td><td>${fmt(r.paid)}</td><td>${fmt(r.remainingDue)}</td><td>${r.mode}</td><td>${(r.date||"").slice(0,10)}</td><td>
+      <button class="icon-action" onclick='window.printReceiptById("${studentId}","${rid}")' title="Print">🖨️</button>
+      <button class="icon-action" onclick='window.sendReceiptOnWhatsApp("${studentId}","${rid}")' title="WhatsApp पर भेजें">💬</button>
+    </td></tr>`;
   });
   html += `</tbody></table></div></div>`;
   const overlay = document.createElement("div");
@@ -1515,6 +1604,33 @@ window.viewFeeHistory = (studentId)=>{
 window.printReceiptById = (studentId, rid)=>{
   const r = state.fees[studentId][rid];
   printReceipt(studentId, {...r, id:rid});
+};
+
+window.sendReceiptOnWhatsApp = (studentId, rid)=>{
+  const r = state.fees[studentId][rid];
+  const s = state.students[studentId];
+  const inst = state.settings || {};
+  const instName = inst.name || "Jivan Jyoti Classes";
+  if(!s || !s.mobile){ toast("Student का mobile number नहीं मिला","error"); return; }
+
+  const lines = [
+    `*${instName}* — भुगतान रसीद`,
+    `Receipt No: ${r.receiptNo}`,
+    `Student: ${s.name} (${s.admissionNo})`,
+    `Class: ${s.class} | Batch: ${s.batch}`,
+    r.month ? `माह: ${formatMonthKey(r.month)}` : "",
+    `भुगतान राशि: ₹${r.paid}`,
+    `Payment Mode: ${r.mode}`,
+    `दिनांक: ${(r.date||"").slice(0,10)}`,
+    r.remainingDue ? `शेष Due: ₹${r.remainingDue}` : "कोई Due नहीं ✅",
+    "", "धन्यवाद!"
+  ].filter(Boolean).join("\n");
+
+  const countryCode = (inst.countryCode||"91").replace(/\D/g,"");
+  const phone = (s.mobile||"").replace(/\D/g,"");
+  window.open(`https://wa.me/${countryCode}${phone}?text=${encodeURIComponent(lines)}`, "_blank");
+  push(ref(db,"whatsapp_log"), {student:s.name, type:"Receipt/Bill", sentBy: state.currentUser.email, date:new Date().toISOString()});
+  logAudit("Receipt Sent on WhatsApp", `${s.name} - ${r.receiptNo}`);
 };
 
 /* =================================================================
