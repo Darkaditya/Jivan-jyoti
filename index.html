@@ -336,7 +336,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
         <div class="filters">
           <input type="text" id="studentSearch" placeholder="🔍 Name / Adm No / Mobile">
           <select id="filterClass"><option value="">All Classes</option></select>
-          <select id="filterBatch"><option value="">All Batches</option><option>Morning</option><option>Evening</option><option>Both</option></select>
+          <select id="filterBatch"><option value="">All Batches</option><option>Morning</option><option>Evening</option><option>Both</option><option>All Time</option></select>
           <select id="filterStatus"><option value="">All Status</option><option>Active</option><option>Inactive</option><option>Left</option><option>Transfer</option></select>
         </div>
         <button class="btn btn-primary btn-sm" id="addStudentBtn">+ Add Student</button>
@@ -356,7 +356,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
         <div class="filters">
           <input type="date" id="attDate">
           <select id="attClass"><option value="">Class चुनें</option></select>
-          <select id="attBatch"><option value="">Batch चुनें</option><option value="All">All</option><option>Morning</option><option>Evening</option><option>Both</option></select>
+          <select id="attBatch"><option value="">Batch चुनें</option><option value="All">All</option><option>Morning</option><option>Evening</option><option>Both</option><option>All Time</option></select>
           <button class="btn btn-outline btn-sm" id="attLoadBtn">Load Students</button>
         </div>
         <button class="btn btn-primary btn-sm" id="attSaveBtn">Save Attendance</button>
@@ -394,7 +394,7 @@ tr:hover td{background:rgba(232,116,28,.05);}
       </div>
       <div class="glass table-wrap" style="padding:6px;">
         <table id="feesTable">
-          <thead><tr><th><input type="checkbox" id="feeSelectAll"></th><th>Adm No</th><th>Name</th><th>Class</th><th>Paid Months</th><th>Due Months</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="feeSelectAll"></th><th>Adm No</th><th>Name</th><th>Class</th><th>This Month</th><th>Paid Months</th><th>Due Months</th><th>Total Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -588,7 +588,17 @@ tr:hover td{background:rgba(232,116,28,.05);}
         <div class="field-sm"><label>Class *</label><select id="sClass" required><option value="">कक्षा चुनें</option></select></div>
         <div class="field-sm"><label>Section</label><input type="text" id="sSection"></div>
         <div class="field-sm"><label>Subjects</label><input type="text" id="sSubjects" placeholder="Maths, Science..."></div>
-        <div class="field-sm"><label>Batch *</label><select id="sBatch" required><option>Morning</option><option>Evening</option><option>Both</option></select></div>
+        <div class="field-sm"><label>Batch *</label><select id="sBatch" required><option>Morning</option><option>Evening</option><option>Both</option><option>All Time</option></select></div>
+        <div class="field-sm full" id="sCustomTimeBox">
+          <label>Custom Time (वैकल्पिक — इस student के लिए अलग समय)</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="time" id="sCustomTimeStart" style="flex:1;">
+            <span style="color:var(--ink-soft);">से</span>
+            <input type="time" id="sCustomTimeEnd" style="flex:1;">
+            <button type="button" class="btn btn-outline btn-sm" id="sClearCustomTime" style="flex-shrink:0;">Clear</button>
+          </div>
+          <p style="font-size:.72rem;color:var(--ink-soft);margin-top:4px;">खाली छोड़ें तो Batch का default समय (Settings में set) इस्तेमाल होगा।</p>
+        </div>
         <div class="field-sm"><label>Admission Date *</label><input type="date" id="sAdmDate" required></div>
         <div class="field-sm"><label>Status</label><select id="sStatus"><option>Active</option><option>Inactive</option><option>Left</option><option>Transfer</option></select></div>
         <div class="field-sm"><label>Monthly Fee (₹) *</label><input type="number" id="sMonthlyFee" placeholder="जैसे 800" min="0"></div>
@@ -621,19 +631,20 @@ tr:hover td{background:rgba(232,116,28,.05);}
       <div id="feeDueSummary" class="glass" style="padding:12px 14px;margin-bottom:14px;font-size:.82rem;display:none;"></div>
       <div class="form-grid">
         <div class="field-sm"><label>Admission Fee</label><input type="number" id="fAdmission" value="0"></div>
-        <div class="field-sm"><label>Monthly Fee</label><input type="number" id="fMonthly" value="0"></div>
+        <div class="field-sm"><label>Monthly Fee (प्रति माह की दर)</label><input type="number" id="fMonthly" value="0"></div>
         <div class="field-sm"><label>Exam Fee</label><input type="number" id="fExam" value="0"></div>
         <div class="field-sm"><label>Books Fee</label><input type="number" id="fBooks" value="0"></div>
         <div class="field-sm"><label>Transport Fee</label><input type="number" id="fTransport" value="0"></div>
         <div class="field-sm"><label>Other Charges</label><input type="number" id="fOther" value="0"></div>
         <div class="field-sm"><label>Discount</label><input type="number" id="fDiscount" value="0"></div>
         <div class="field-sm"><label>Late Fine</label><input type="number" id="fFine" value="0"></div>
+        <div class="field-sm"><label>कितने महीने की Fee?</label><input type="number" id="fMonthsCount" value="1" min="1" style="font-weight:700;"></div>
         <div class="field-sm"><label>Previous Due</label><input type="number" id="fPrevDue" value="0"></div>
         <div class="field-sm"><label>Paid Amount *</label><input type="number" id="fPaid" required></div>
         <div class="field-sm"><label>Payment Mode</label><select id="fMode"><option>Cash</option><option>UPI</option><option>Bank</option><option>Cheque</option></select></div>
-        <div class="field-sm"><label>For Month</label><input type="month" id="fMonth"></div>
       </div>
-      <p style="margin-top:10px;font-size:.85rem;">Total: ₹<span id="feeTotalPreview">0</span> &nbsp; Remaining Due: ₹<span id="feeRemainingPreview">0</span></p>
+      <p id="feeMonthsCoverText" style="margin-top:8px;font-size:.8rem;color:var(--ink-soft);"></p>
+      <p style="margin-top:6px;font-size:.85rem;">Total: ₹<span id="feeTotalPreview">0</span> &nbsp; Remaining Due (इस payment के बाद): ₹<span id="feeRemainingPreview">0</span></p>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline btn-sm" data-close="feeModal">Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Save &amp; Generate Receipt</button>
@@ -1087,6 +1098,11 @@ $("studentPhotoFile").addEventListener("change", (e)=>{
   if(file){ $("studentPhotoPreview").src = URL.createObjectURL(file); }
 });
 
+$("sClearCustomTime").addEventListener("click", ()=>{
+  $("sCustomTimeStart").value = "";
+  $("sCustomTimeEnd").value = "";
+});
+
 $("studentForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const id = $("studentId").value;
@@ -1107,6 +1123,8 @@ $("studentForm").addEventListener("submit", async (e)=>{
     admissionDate: $("sAdmDate").value,
     status: $("sStatus").value,
     monthlyFee: Number($("sMonthlyFee").value||0),
+    customTimeStart: $("sCustomTimeStart").value || "",
+    customTimeEnd: $("sCustomTimeEnd").value || "",
     address: $("sAddress").value.trim(),
     notes: $("sNotes").value.trim()
   };
@@ -1173,7 +1191,7 @@ function renderStudents(){
       <td>${s.admissionNo||"—"}</td>
       <td><a href="javascript:void(0)" onclick="window.viewStudentDetails('${id}')" style="color:var(--saffron);font-weight:600;text-decoration:underline;">${s.name}</a></td>
       <td>${s.class}</td>
-      <td>${getBatchLabel(s.batch)}</td>
+      <td>${getBatchLabel(s.batch, s)}</td>
       <td>${s.mobile}</td>
       <td><span class="badge ${s.status==='Active'?'green':(s.status==='Inactive'?'yellow':'red')}">${s.status}</span></td>
       <td>
@@ -1203,6 +1221,7 @@ window.editStudent = (id)=>{
   $("sClass").value=s.class||""; $("sSection").value=s.section||""; $("sSubjects").value=s.subjects||"";
   $("sBatch").value=s.batch||"Morning"; $("sAdmDate").value=s.admissionDate||""; $("sStatus").value=s.status||"Active";
   $("sMonthlyFee").value=s.monthlyFee||""; $("sAddress").value=s.address||""; $("sNotes").value=s.notes||"";
+  $("sCustomTimeStart").value=s.customTimeStart||""; $("sCustomTimeEnd").value=s.customTimeEnd||"";
   $("studentPhotoPreview").src = s.photoUrl || "https://via.placeholder.com/70?text=Photo";
   editingStudentPhotoUrl = s.photoUrl||"";
   $("admissionFeeToggleBox").style.display = "none";
@@ -1228,7 +1247,7 @@ window.viewStudentDetails = (id)=>{
         <div><b>Status:</b> ${s.status||"—"}</div>
         <div><b>Class:</b> ${s.class||"—"}</div>
         <div><b>Section:</b> ${s.section||"—"}</div>
-        <div><b>Batch:</b> ${getBatchLabel(s.batch)||"—"}</div>
+        <div><b>Batch:</b> ${getBatchLabel(s.batch, s)||"—"}</div>
         <div><b>Admission Date:</b> ${s.admissionDate||"—"}</div>
         <div><b>Father Name:</b> ${s.father||"—"}</div>
         <div><b>Mother Name:</b> ${s.mother||"—"}</div>
@@ -1289,7 +1308,7 @@ function refreshAttClassStudents(){ /* placeholder for future cache refresh */ }
 $("attLoadBtn").addEventListener("click", ()=>{
   const cls = $("attClass").value, batch=$("attBatch").value;
   if(!cls||!batch){ toast("Class और Batch चुनें","error"); return; }
-  const list = Object.entries(state.students).filter(([,s])=> s.class===cls && (batch==="All" || s.batch===batch || s.batch==="Both"));
+  const list = Object.entries(state.students).filter(([,s])=> s.class===cls && (batch==="All" || s.batch===batch || s.batch==="Both" || s.batch==="All Time"));
   const tbody = $("attendanceTable").querySelector("tbody");
   tbody.innerHTML = list.map(([id,s])=>`
     <tr data-id="${id}">
@@ -1379,20 +1398,40 @@ $("feeStudent").addEventListener("change", ()=>{
   const s = state.students[studentId];
   if(s && s.monthlyFee){
     $("fMonthly").value = s.monthlyFee;
-    recalcFeePreview();
   }
+  $("fMonthsCount").value = 1;
+  recalcFeePreview();
   renderFeeDueSummary(studentId);
 });
 
-["fAdmission","fMonthly","fExam","fBooks","fTransport","fOther","fDiscount","fFine","fPrevDue","fPaid"].forEach(id=>{
+["fAdmission","fMonthly","fMonthsCount","fExam","fBooks","fTransport","fOther","fDiscount","fFine","fPrevDue","fPaid"].forEach(id=>{
   $(id).addEventListener("input", recalcFeePreview);
 });
+
 function recalcFeePreview(){
-  const total = ["fAdmission","fMonthly","fExam","fBooks","fTransport","fOther","fFine","fPrevDue"]
+  const studentId = $("feeStudent").value;
+  const s = state.students[studentId];
+  const monthsCount = Math.max(1, Number($("fMonthsCount").value||1));
+  const monthlyRate = Number($("fMonthly").value||0);
+  const monthlyLineTotal = monthlyRate * monthsCount;
+
+  const total = monthlyLineTotal + ["fAdmission","fExam","fBooks","fTransport","fOther","fFine","fPrevDue"]
     .reduce((sum,id)=> sum+Number($(id).value||0), 0) - Number($("fDiscount").value||0);
-  const remaining = Math.max(0, total - Number($("fPaid").value||0));
+  const paid = Number($("fPaid").value||0);
+  const remaining = Math.max(0, total - paid);
   $("feeTotalPreview").textContent = total;
   $("feeRemainingPreview").textContent = remaining;
+
+  // Show which months this payment will likely cover (informational only, oldest unpaid first)
+  if(s && monthlyRate>0){
+    const info = computeStudentDueInfo(studentId);
+    const coverList = info.dueMonthsRaw.slice(0, monthsCount).map(formatMonthKey);
+    $("feeMonthsCoverText").textContent = coverList.length
+      ? `यह payment cover करेगा: ${coverList.join(", ")} (कुल ${monthsCount} महीने × ₹${monthlyRate} = ₹${monthlyLineTotal})`
+      : `कोई महीना pending नहीं है, फिर भी ${monthsCount} महीने की fee (₹${monthlyLineTotal}) advance जाएगी`;
+  }else{
+    $("feeMonthsCoverText").textContent = "";
+  }
 }
 
 let _feeSubmitting = false;
@@ -1401,8 +1440,13 @@ $("feeForm").addEventListener("submit", async (e)=>{
   if(_feeSubmitting) return;
   const studentId = $("feeStudent").value;
   if(!studentId){ toast("Student चुनें","error"); return; }
+  const s = state.students[studentId];
+  const monthsCount = Math.max(1, Number($("fMonthsCount").value||1));
+  const monthlyRate = Number($("fMonthly").value||0);
+
   const components = {
-    admissionFee:Number($("fAdmission").value||0), monthlyFee:Number($("fMonthly").value||0),
+    admissionFee:Number($("fAdmission").value||0), monthlyFee: monthlyRate * monthsCount,
+    monthlyRate, monthsCount,
     examFee:Number($("fExam").value||0), booksFee:Number($("fBooks").value||0),
     transportFee:Number($("fTransport").value||0), otherCharges:Number($("fOther").value||0),
     discount:Number($("fDiscount").value||0), fine:Number($("fFine").value||0),
@@ -1412,7 +1456,16 @@ $("feeForm").addEventListener("submit", async (e)=>{
   const paid = Number($("fPaid").value||0);
   const remainingDue = Math.max(0, total-paid);
   const mode = $("fMode").value;
-  const month = $("fMonth").value;
+
+  // Best-effort label of which months this invoice covers (for receipts/history readability only —
+  // the authoritative due-amount calculation elsewhere is based on cumulative totals, not this tag,
+  // so paying for multiple months at once never gets "stuck" showing as still pending)
+  let monthsCoveredLabel = "";
+  if(s && monthlyRate>0){
+    const info = computeStudentDueInfo(studentId);
+    const coverList = info.dueMonthsRaw.slice(0, monthsCount);
+    monthsCoveredLabel = coverList.map(formatMonthKey).join(", ");
+  }
 
   _feeSubmitting = true;
   const submitBtn = $("feeForm").querySelector('button[type="submit"]');
@@ -1421,7 +1474,7 @@ $("feeForm").addEventListener("submit", async (e)=>{
     const counterRef = ref(db,"counters/receiptNo");
     const txResult = await runTransaction(counterRef, (cur)=> (cur||0)+1);
     const receiptNo = "RCPT" + String(txResult.snapshot.val()).padStart(5,"0");
-    const record = {...components, total, paid, remainingDue, mode, month, receiptNo, date: new Date().toISOString(), collectedBy: state.currentUser.email};
+    const record = {...components, total, paid, remainingDue, mode, monthsCoveredLabel, date: new Date().toISOString(), collectedBy: state.currentUser.email};
     const newRef = push(ref(db,"fees/"+studentId));
     await set(newRef, record);
     logAudit("Fee Collected", `${state.students[studentId]?.name} - ₹${paid}`);
@@ -1435,57 +1488,105 @@ $("feeForm").addEventListener("submit", async (e)=>{
   }
 });
 
-function getDueMonths(admissionDate, paidMonthsSet){
-  if(!admissionDate) return [];
-  const start = new Date(admissionDate.slice(0,7)+"-01");
-  const now = new Date();
-  const nowMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  if(isNaN(start.getTime()) || start > nowMonthStart) return [];
-  const due = [];
-  let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  while(cursor <= nowMonthStart){
-    const key = cursor.toISOString().slice(0,7);
-    if(!paidMonthsSet.has(key)) due.push(key);
-    cursor.setMonth(cursor.getMonth()+1);
-  }
-  return due;
-}
-
 function formatMonthKey(m){
   return new Date(m+"-01").toLocaleString("default",{month:"short", year:"2-digit"});
 }
 
 // Central helper: full due-info for one student (used in Fees table, Fee modal summary, WhatsApp reminders, student details)
+// IMPORTANT: This is based on CUMULATIVE TOTALS (everything ever billed vs everything ever paid),
+// NOT on tagging individual fee records with a specific "month". This means paying for multiple
+// months in one transaction (or any transaction) always correctly reduces the due amount —
+// there's no way for it to get "stuck" showing as pending due to a missed month-tag.
 function computeStudentDueInfo(studentId){
   const s = state.students[studentId];
   const recs = Object.entries(state.fees[studentId]||{}).map(([rid,r])=>({...r, rid}));
-  const totalPaid = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
-  const lastExtraDue = recs.length ? Number(recs[recs.length-1].remainingDue||0) : 0;
-  const paidMonthsSet = new Set(recs.filter(r=>r.month).map(r=>r.month));
-  const dueMonthsRaw = s ? getDueMonths(s.admissionDate, paidMonthsSet) : [];
+  const recsChronological = [...recs].sort((a,b)=> new Date(a.date)-new Date(b.date));
+
+  const totalPaidEver = recs.reduce((sum,r)=>sum+Number(r.paid||0),0);
+
+  // Everything ever billed that ISN'T the recurring monthly fee (one-time charges), net of discounts given
+  const totalOneTimeCharges = recs.reduce((sum,r)=>
+    sum + Number(r.admissionFee||0) + Number(r.examFee||0) + Number(r.booksFee||0)
+        + Number(r.transportFee||0) + Number(r.otherCharges||0) + Number(r.fine||0)
+        - Number(r.discount||0)
+  , 0);
+
+  // Opening due (due carried forward from BEFORE using this system) — taken only from the
+  // very first fee record ever entered for this student, to avoid double-counting it on every
+  // subsequent transaction (a common data-entry habit that used to silently break the due total).
+  const openingDue = recsChronological.length ? Number(recsChronological[0].previousDue||0) : 0;
+
   const monthlyFee = Number((s&&s.monthlyFee)||0);
 
-  const currentMonthKey = thisMonthStr();
-  const oldDueMonthsRaw = dueMonthsRaw.filter(m => m !== currentMonthKey);
-  const currentMonthDueRaw = dueMonthsRaw.filter(m => m === currentMonthKey);
-  const oldDueAmount = oldDueMonthsRaw.length * monthlyFee;
-  const currentMonthDueAmount = currentMonthDueRaw.length * monthlyFee;
+  // How many months have elapsed since admission (inclusive of the current month)
+  let monthsSinceAdmission = 0;
+  let admissionMonthDate = null;
+  if(s && s.admissionDate){
+    admissionMonthDate = new Date(s.admissionDate.slice(0,7)+"-01");
+    const now = new Date();
+    const nowMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if(!isNaN(admissionMonthDate.getTime()) && admissionMonthDate <= nowMonthStart){
+      monthsSinceAdmission = (nowMonthStart.getFullYear()-admissionMonthDate.getFullYear())*12 + (nowMonthStart.getMonth()-admissionMonthDate.getMonth()) + 1;
+    }
+  }
 
-  const monthsDueAmount = dueMonthsRaw.length * monthlyFee;
-  const totalDueAmount = monthsDueAmount + lastExtraDue;
+  const totalMonthlyObligation = monthsSinceAdmission * monthlyFee;
+  const totalOwed = totalMonthlyObligation + totalOneTimeCharges + openingDue;
+  const totalDueAmount = Math.max(0, totalOwed - totalPaidEver);
+
+  // Work out how many months' worth of recurring fee are effectively covered so far
+  // (opening due + one-time charges are assumed to get settled first out of cumulative payments — FIFO)
+  const paidTowardMonthly = Math.max(0, totalPaidEver - totalOneTimeCharges - openingDue);
+  const monthsCoveredCount = monthlyFee>0 ? Math.min(monthsSinceAdmission, Math.floor(paidTowardMonthly/monthlyFee + 1e-9)) : monthsSinceAdmission;
+  const dueMonthsCount = Math.max(0, monthsSinceAdmission - monthsCoveredCount);
+
+  // Build the list of still-due month keys: the most recent `dueMonthsCount` months up to now
+  const dueMonthsRaw = [];
+  if(admissionMonthDate && dueMonthsCount>0){
+    const now = new Date();
+    const nowMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    let cursor = new Date(nowMonthStart);
+    cursor.setMonth(cursor.getMonth() - (dueMonthsCount-1));
+    for(let i=0;i<dueMonthsCount;i++){
+      dueMonthsRaw.push(cursor.toISOString().slice(0,7));
+      cursor.setMonth(cursor.getMonth()+1);
+    }
+  }
+  const paidMonthsRaw = [];
+  if(admissionMonthDate && monthsCoveredCount>0){
+    let cursor = new Date(admissionMonthDate);
+    for(let i=0;i<monthsCoveredCount;i++){
+      paidMonthsRaw.push(cursor.toISOString().slice(0,7));
+      cursor.setMonth(cursor.getMonth()+1);
+    }
+  }
+
+  const currentMonthKey = thisMonthStr();
+  const isThisMonthPaid = monthlyFee>0 ? !dueMonthsRaw.includes(currentMonthKey) : (totalDueAmount<=0);
+  const currentMonthDueRaw = dueMonthsRaw.includes(currentMonthKey) ? [currentMonthKey] : [];
+  const oldDueMonthsRaw = dueMonthsRaw.filter(m=>m!==currentMonthKey);
+
+  // Split totalDueAmount into "this month" vs "everything else" — always sums back to totalDueAmount exactly
+  const currentMonthDueAmount = currentMonthDueRaw.length ? Math.min(monthlyFee, totalDueAmount) : 0;
+  const oldDueAmount = totalDueAmount - currentMonthDueAmount;
+
   let lastPayment = null;
   if(recs.length){
     const sorted = [...recs].sort((a,b)=> new Date(b.date)-new Date(a.date));
     lastPayment = sorted[0];
   }
+
   return {
-    s, totalPaid, lastExtraDue, dueMonthsRaw,
+    s, totalPaid: totalPaidEver, lastExtraDue: Math.max(0, (totalOneTimeCharges+openingDue) - Math.min(totalPaidEver, totalOneTimeCharges+openingDue)),
+    dueMonthsRaw,
     dueMonthsFormatted: dueMonthsRaw.map(formatMonthKey),
     oldDueMonthsFormatted: oldDueMonthsRaw.map(formatMonthKey),
     currentMonthDueFormatted: currentMonthDueRaw.map(formatMonthKey),
-    oldDueAmount, currentMonthDueAmount,
-    paidMonthsFormatted: [...paidMonthsSet].sort().map(formatMonthKey),
-    monthlyFee, monthsDueAmount, totalDueAmount, lastPayment
+    oldDueAmount, currentMonthDueAmount, isThisMonthPaid,
+    paidMonthsFormatted: paidMonthsRaw.map(formatMonthKey),
+    monthlyFee, monthsDueAmount: dueMonthsRaw.length*monthlyFee, totalDueAmount, lastPayment,
+    // full transparent breakdown — useful to self-diagnose any mismatch (e.g. Monthly Fee not set on student profile)
+    debugBreakdown: { monthsSinceAdmission, totalMonthlyObligation, totalOneTimeCharges, openingDue, totalOwed, totalPaidEver }
   };
 }
 
@@ -1494,12 +1595,16 @@ function renderFeeDueSummary(studentId){
   if(!studentId){ box.style.display="none"; box.innerHTML=""; return; }
   const info = computeStudentDueInfo(studentId);
   const lastPayText = info.lastPayment
-    ? `${fmt(info.lastPayment.paid)} (${(info.lastPayment.date||"").slice(0,10)}${info.lastPayment.month?", माह: "+formatMonthKey(info.lastPayment.month):""})`
+    ? `${fmt(info.lastPayment.paid)} (${(info.lastPayment.date||"").slice(0,10)}${info.lastPayment.monthsCoveredLabel?", महीने: "+info.lastPayment.monthsCoveredLabel:(info.lastPayment.month?", माह: "+formatMonthKey(info.lastPayment.month):"")})`
     : "कोई payment अभी तक नहीं";
   const oldDueText = info.oldDueMonthsFormatted.length ? info.oldDueMonthsFormatted.join(", ") : "कोई नहीं";
   const currentDueText = info.currentMonthDueFormatted.length ? info.currentMonthDueFormatted.join(", ") : "इस महीने का भुगतान हो चुका है";
+  const thisMonthBadge = info.isThisMonthPaid
+    ? '<span class="badge green">इस महीने की Fee: Paid ✅</span>'
+    : '<span class="badge red">इस महीने की Fee: Pending ❌</span>';
   box.style.display = "block";
   box.innerHTML = `
+    <div style="margin-bottom:10px;">${thisMonthBadge}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
       <div><b>Last Payment:</b> ${lastPayText}</div>
       <div><b>Monthly Fee:</b> ${fmt(info.monthlyFee)}</div>
@@ -1507,7 +1612,21 @@ function renderFeeDueSummary(studentId){
       <div><b>This Month Due:</b> <span style="color:${info.currentMonthDueFormatted.length?'var(--red)':'var(--green)'};font-weight:600;">${currentDueText}</span> ${info.currentMonthDueAmount?("— "+fmt(info.currentMonthDueAmount)):""}</div>
       <div style="grid-column:1/-1;">${info.lastExtraDue?`<b>अन्य/पिछला Due (admission/exam आदि):</b> ${fmt(info.lastExtraDue)}<br>`:""}</div>
       <div style="grid-column:1/-1;padding-top:6px;border-top:1px dashed var(--line);"><b>कुल मिलाकर Total Due Amount:</b> <span style="color:var(--red);font-weight:700;font-size:1.05rem;">${fmt(info.totalDueAmount)}</span></div>
-    </div>`;
+    </div>
+    <details style="margin-top:10px;font-size:.74rem;color:var(--ink-soft);">
+      <summary style="cursor:pointer;">🔍 Calculation Details (verify करने के लिए)</summary>
+      <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;">
+        <div>Admission से महीने: ${info.debugBreakdown.monthsSinceAdmission}</div>
+        <div>Monthly Fee: ${fmt(info.monthlyFee)}</div>
+        <div>Monthly Obligation (महीने × Fee): ${fmt(info.debugBreakdown.totalMonthlyObligation)}</div>
+        <div>One-time Charges (admission/exam/etc): ${fmt(info.debugBreakdown.totalOneTimeCharges)}</div>
+        <div>Opening Due (पहली बार का पुराना due): ${fmt(info.debugBreakdown.openingDue)}</div>
+        <div>Total Owed (कुल देय): ${fmt(info.debugBreakdown.totalOwed)}</div>
+        <div>Total Paid Ever (अब तक भुगतान): ${fmt(info.debugBreakdown.totalPaidEver)}</div>
+        <div><b>Due = Owed − Paid = ${fmt(info.totalDueAmount)}</b></div>
+      </div>
+      <p style="margin-top:6px;">अगर ये गलत लग रहा है, सबसे पहले check करें कि Student के Edit form में <b>"Monthly Fee"</b> सही amount set है या नहीं (0 तो नहीं है)।</p>
+    </details>`;
 }
 
 function renderFees(){
@@ -1515,7 +1634,7 @@ function renderFees(){
   const duesFilter = $("duesFilter").value;
   const rows = Object.entries(state.students).map(([id,s])=>{
     const info = computeStudentDueInfo(id);
-    return {id, s, totalPaid: info.totalPaid, due: info.totalDueAmount, paidMonths: info.paidMonthsFormatted, dueMonths: info.dueMonthsFormatted};
+    return {id, s, totalPaid: info.totalPaid, due: info.totalDueAmount, paidMonths: info.paidMonthsFormatted, dueMonths: info.dueMonthsFormatted, isThisMonthPaid: info.isThisMonthPaid};
   }).filter(r=>{
     if(search && !(`${r.s.name} ${r.s.admissionNo} ${r.s.mobile}`.toLowerCase().includes(search))) return false;
     if(duesFilter && r.due<=0) return false;
@@ -1526,15 +1645,17 @@ function renderFees(){
     let badge = r.due<=0 ? '<span class="badge green">Paid</span>' : (r.due<1000 ? '<span class="badge yellow">Due Soon</span>' : '<span class="badge red">Pending</span>');
     const monthsText = r.paidMonths.length ? r.paidMonths.join(", ") : '<span style="color:var(--ink-soft);">—</span>';
     const dueMonthsText = r.dueMonths.length ? `<span style="color:var(--red);font-weight:600;">${r.dueMonths.join(", ")}</span>` : '<span style="color:var(--green);">कोई नहीं</span>';
+    const thisMonthBadge = r.isThisMonthPaid ? '<span class="badge green">Paid</span>' : '<span class="badge red">Pending</span>';
     return `<tr>
       <td><input type="checkbox" class="fee-select-check" value="${r.id}"></td>
       <td>${r.s.admissionNo}</td><td>${r.s.name}</td><td>${r.s.class}</td>
+      <td>${thisMonthBadge}</td>
       <td style="font-size:.78rem;max-width:160px;white-space:normal;">${monthsText}</td>
       <td style="font-size:.78rem;max-width:160px;white-space:normal;">${dueMonthsText}</td>
       <td>${fmt(r.totalPaid)}</td><td>${fmt(r.due)}</td><td>${badge}</td>
       <td><button class="icon-action" onclick="window.viewFeeHistory('${r.id}')">📜</button></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="10" class="empty-state">कोई record नहीं</td></tr>`;
+  }).join("") || `<tr><td colspan="11" class="empty-state">कोई record नहीं</td></tr>`;
 }
 ["feeSearch","duesFilter"].forEach(id=> $(id).addEventListener("input", renderFees));
 $("feeSelectAll").addEventListener("change", (e)=>{
@@ -1558,6 +1679,10 @@ function printMultipleBills(studentIds){
     const recs = Object.values(state.fees[studentId]||{});
     if(!s || !recs.length) return "";
     const last = recs[recs.length-1];
+    const info = computeStudentDueInfo(studentId);
+    const statusHtml = info.isThisMonthPaid
+      ? `<span style="color:#1B9E5A;font-weight:700;">Paid ✅</span>`
+      : `<span style="color:#D43F3F;font-weight:700;">Pending ❌</span>`;
     return `
       <div class="mini-slip">
         <div class="mini-slip-head">
@@ -1567,10 +1692,11 @@ function printMultipleBills(studentIds){
         <hr>
         <div><b>Receipt:</b> ${last.receiptNo}</div>
         <div><b>Student:</b> ${s.name} (${s.admissionNo})</div>
-        <div><b>Class:</b> ${s.class} | <b>Batch:</b> ${getBatchLabel(s.batch)}</div>
+        <div><b>Class:</b> ${s.class} | <b>Batch:</b> ${getBatchLabel(s.batch, s)}</div>
         ${last.month?`<div><b>माह:</b> ${formatMonthKey(last.month)}</div>`:""}
-        <div><b>Paid:</b> ${fmt(last.paid)}</div>
-        <div><b>Due:</b> ${fmt(last.remainingDue)}</div>
+        <div><b>इस महीने की Fee:</b> ${statusHtml}</div>
+        <div><b>Last Paid:</b> ${fmt(last.paid)}</div>
+        <div><b>Overall Due:</b> ${fmt(info.totalDueAmount)}</div>
         <div><b>Date:</b> ${(last.date||"").slice(0,10)}</div>
         <div style="margin-top:10px;font-size:.7rem;text-align:right;">Signature: ______</div>
       </div>`;
@@ -1642,6 +1768,10 @@ function printReceipt(studentId, record){
   const instName = inst.name || "Jivan Jyoti Classes";
   const instAddress = inst.address || "हवा महल, पभेरा (पटना)";
   const instPhone = inst.phone || "9122367624, 9507292656";
+  const info = computeStudentDueInfo(studentId);
+  const monthStatusHtml = info.isThisMonthPaid
+    ? `<span style="background:#dff5e6;color:#1B9E5A;padding:3px 10px;border-radius:6px;font-weight:700;">इस महीने की Fee: PAID ✅</span>`
+    : `<span style="background:#fbe1e1;color:#D43F3F;padding:3px 10px;border-radius:6px;font-weight:700;">इस महीने की Fee: PENDING ❌</span>`;
   $("printArea").innerHTML = `
     <div class="receipt-a4">
       <div class="receipt-head">
@@ -1650,8 +1780,9 @@ function printReceipt(studentId, record){
       </div>
       <div class="receipt-meta">
         <div>Receipt No: <b>${record.receiptNo}</b><br>Date: ${(record.date||"").slice(0,10)}</div>
-        <div>Student: <b>${s.name}</b><br>Adm No: ${s.admissionNo} | Class: ${s.class} | Batch: ${getBatchLabel(s.batch)}</div>
+        <div>Student: <b>${s.name}</b><br>Adm No: ${s.admissionNo} | Class: ${s.class} | Batch: ${getBatchLabel(s.batch, s)}</div>
       </div>
+      <div style="margin:8px 0;">${monthStatusHtml}</div>
       <table class="receipt-table">
         <tr><th>Particular</th><th>Amount</th></tr>
         <tr><td>Admission Fee</td><td>${fmt(record.admissionFee)}</td></tr>
@@ -1663,9 +1794,9 @@ function printReceipt(studentId, record){
         <tr><td>Previous Due</td><td>${fmt(record.previousDue)}</td></tr>
         <tr><td>Late Fine</td><td>${fmt(record.fine)}</td></tr>
         <tr><td>Discount</td><td>- ${fmt(record.discount)}</td></tr>
-        <tr><td><b>Total</b></td><td><b>${fmt(record.total)}</b></td></tr>
-        <tr><td><b>Paid</b></td><td><b>${fmt(record.paid)}</b></td></tr>
-        <tr><td><b>Remaining Due</b></td><td><b>${fmt(record.remainingDue)}</b></td></tr>
+        <tr><td><b>Total (इस transaction का)</b></td><td><b>${fmt(record.total)}</b></td></tr>
+        <tr><td><b>Paid (इस transaction में)</b></td><td><b>${fmt(record.paid)}</b></td></tr>
+        <tr><td><b>Overall Due (अब कुल मिलाकर)</b></td><td><b style="color:${info.totalDueAmount>0?'#D43F3F':'#1B9E5A'};">${fmt(info.totalDueAmount)}</b></td></tr>
       </table>
       <p>Payment Mode: ${record.mode}</p>
       <div class="receipt-foot"><span>${inst.receiptFooter||"धन्यवाद! / Thank you"}</span><span>Signature: ____________</span></div>
@@ -1688,7 +1819,7 @@ window.printIdCard = (id)=>{
       <h4 style="font-size:.85rem;font-weight:800;">${instName}</h4>
       <p style="font-size:.65rem;color:#333;">${instAddress}${instPhone?(" | "+instPhone):""}</p>
       <p style="font-size:.75rem;"><b>${s.name}</b></p>
-      <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${getBatchLabel(s.batch)}<br>Session: ${inst.session||""}</p>
+      <p style="font-size:.7rem;">Adm No: ${s.admissionNo}<br>Class: ${s.class} | Batch: ${getBatchLabel(s.batch, s)}<br>Session: ${inst.session||""}</p>
     </div>`;
   window.print();
 };
@@ -1884,7 +2015,7 @@ function populateWhatsAppTargets(){
   }else if(type==="class"){
     sel.innerHTML = CLASSES.map(c=>`<option value="${c}">${c}</option>`).join("");
   }else{
-    sel.innerHTML = `<option value="All">All</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Both">Both</option>`;
+    sel.innerHTML = `<option value="All">All</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Both">Both</option><option value="All Time">All Time</option>`;
   }
 }
 populateWhatsAppTargets();
@@ -1928,7 +2059,7 @@ $("waSendBtn").addEventListener("click", async ()=>{
   }else if(type==="class"){
     targets = Object.values(state.students).filter(s=>s.class===val);
   }else{
-    targets = val==="All" ? Object.values(state.students) : Object.values(state.students).filter(s=> s.batch===val || s.batch==="Both");
+    targets = val==="All" ? Object.values(state.students) : Object.values(state.students).filter(s=> s.batch===val || s.batch==="Both" || s.batch==="All Time");
   }
   if(!targets.length){ toast("कोई student नहीं मिला","error"); return; }
 
@@ -2077,20 +2208,26 @@ function formatTime12hr(t24){
   return `${h12}:${String(m).padStart(2,"0")} ${period}`;
 }
 
-// Show configured batch timings next to Morning/Evening options wherever batch is selectable
-function getBatchLabel(batchName){
+// Show configured batch timings next to Morning/Evening options wherever batch is selectable.
+// If a student object is passed and has a custom time override set, that takes priority
+// over the institute-wide default timing configured in Settings.
+function getBatchLabel(batchName, student){
+  if(student && student.customTimeStart && student.customTimeEnd){
+    return `${batchName} (${formatTime12hr(student.customTimeStart)} - ${formatTime12hr(student.customTimeEnd)})`;
+  }
   const s = state.settings || {};
   const morningRange = (s.morningStart && s.morningEnd) ? `${formatTime12hr(s.morningStart)} - ${formatTime12hr(s.morningEnd)}` : "";
   const eveningRange = (s.eveningStart && s.eveningEnd) ? `${formatTime12hr(s.eveningStart)} - ${formatTime12hr(s.eveningEnd)}` : "";
   if(batchName==="Morning" && morningRange) return `Morning (${morningRange})`;
   if(batchName==="Evening" && eveningRange) return `Evening (${eveningRange})`;
   if(batchName==="Both" && (morningRange||eveningRange)) return `Both (${morningRange||"?"} / ${eveningRange||"?"})`;
+  if(batchName==="All Time") return "All Time (कभी भी)";
   return batchName;
 }
 function updateBatchTimeLabels(){
   document.querySelectorAll('select#sBatch option, select#filterBatch option, select#attBatch option').forEach(opt=>{
     const val = opt.value || opt.textContent;
-    if(["Morning","Evening","Both"].includes(val)){
+    if(["Morning","Evening","Both","All Time"].includes(val)){
       opt.textContent = getBatchLabel(val);
     }
   });
