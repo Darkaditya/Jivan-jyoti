@@ -1159,8 +1159,9 @@ $("studentForm").addEventListener("submit", async (e)=>{
         $("feeForm").reset();
         $("feeStudent").value = studentId;
         $("fMonthly").value = data.monthlyFee || 0;
-        $("fMonth").value = thisMonthStr();
+        $("fMonthsCount").value = 1;
         recalcFeePreview();
+        renderFeeDueSummary(studentId);
         openModal("feeModal");
       }, 300);
     }
@@ -1387,7 +1388,7 @@ $("collectFeeBtn").addEventListener("click", ()=>{
   $("feeStudent").value = "";
   $("feeStudentSearch").value = "";
   $("feeStudent").querySelectorAll("option").forEach(opt=> opt.style.display="");
-  $("fMonth").value = thisMonthStr();
+  $("fMonthsCount").value = 1;
   recalcFeePreview();
   renderFeeDueSummary("");
   openModal("feeModal");
@@ -1562,7 +1563,11 @@ function computeStudentDueInfo(studentId){
   }
 
   const currentMonthKey = thisMonthStr();
-  const isThisMonthPaid = monthlyFee>0 ? !dueMonthsRaw.includes(currentMonthKey) : (totalDueAmount<=0);
+  const monthlyFeeNotSet = !monthlyFee || monthlyFee<=0;
+  // thisMonthStatus: 'not-set' (Monthly Fee never configured for this student — can't judge),
+  // 'paid' (current month not in the due list), or 'pending' (current month still due)
+  const thisMonthStatus = monthlyFeeNotSet ? "not-set" : (dueMonthsRaw.includes(currentMonthKey) ? "pending" : "paid");
+  const isThisMonthPaid = thisMonthStatus === "paid"; // kept for backward compatibility with older call sites
   const currentMonthDueRaw = dueMonthsRaw.includes(currentMonthKey) ? [currentMonthKey] : [];
   const oldDueMonthsRaw = dueMonthsRaw.filter(m=>m!==currentMonthKey);
 
@@ -1582,7 +1587,7 @@ function computeStudentDueInfo(studentId){
     dueMonthsFormatted: dueMonthsRaw.map(formatMonthKey),
     oldDueMonthsFormatted: oldDueMonthsRaw.map(formatMonthKey),
     currentMonthDueFormatted: currentMonthDueRaw.map(formatMonthKey),
-    oldDueAmount, currentMonthDueAmount, isThisMonthPaid,
+    oldDueAmount, currentMonthDueAmount, isThisMonthPaid, thisMonthStatus,
     paidMonthsFormatted: paidMonthsRaw.map(formatMonthKey),
     monthlyFee, monthsDueAmount: dueMonthsRaw.length*monthlyFee, totalDueAmount, lastPayment,
     // full transparent breakdown — useful to self-diagnose any mismatch (e.g. Monthly Fee not set on student profile)
@@ -1634,7 +1639,7 @@ function renderFees(){
   const duesFilter = $("duesFilter").value;
   const rows = Object.entries(state.students).map(([id,s])=>{
     const info = computeStudentDueInfo(id);
-    return {id, s, totalPaid: info.totalPaid, due: info.totalDueAmount, paidMonths: info.paidMonthsFormatted, dueMonths: info.dueMonthsFormatted, isThisMonthPaid: info.isThisMonthPaid};
+    return {id, s, totalPaid: info.totalPaid, due: info.totalDueAmount, paidMonths: info.paidMonthsFormatted, dueMonths: info.dueMonthsFormatted, thisMonthStatus: info.thisMonthStatus};
   }).filter(r=>{
     if(search && !(`${r.s.name} ${r.s.admissionNo} ${r.s.mobile}`.toLowerCase().includes(search))) return false;
     if(duesFilter && r.due<=0) return false;
@@ -1645,7 +1650,9 @@ function renderFees(){
     let badge = r.due<=0 ? '<span class="badge green">Paid</span>' : (r.due<1000 ? '<span class="badge yellow">Due Soon</span>' : '<span class="badge red">Pending</span>');
     const monthsText = r.paidMonths.length ? r.paidMonths.join(", ") : '<span style="color:var(--ink-soft);">—</span>';
     const dueMonthsText = r.dueMonths.length ? `<span style="color:var(--red);font-weight:600;">${r.dueMonths.join(", ")}</span>` : '<span style="color:var(--green);">कोई नहीं</span>';
-    const thisMonthBadge = r.isThisMonthPaid ? '<span class="badge green">Paid</span>' : '<span class="badge red">Pending</span>';
+    const thisMonthBadge = r.thisMonthStatus==="paid" ? '<span class="badge green">Paid</span>'
+      : r.thisMonthStatus==="pending" ? '<span class="badge red">Pending</span>'
+      : '<span class="badge yellow" title="Student के Edit form में Monthly Fee set करें">Not Set</span>';
     return `<tr>
       <td><input type="checkbox" class="fee-select-check" value="${r.id}"></td>
       <td>${r.s.admissionNo}</td><td>${r.s.name}</td><td>${r.s.class}</td>
@@ -1680,9 +1687,11 @@ function printMultipleBills(studentIds){
     if(!s || !recs.length) return "";
     const last = recs[recs.length-1];
     const info = computeStudentDueInfo(studentId);
-    const statusHtml = info.isThisMonthPaid
+    const statusHtml = info.thisMonthStatus==="paid"
       ? `<span style="color:#1B9E5A;font-weight:700;">Paid ✅</span>`
-      : `<span style="color:#D43F3F;font-weight:700;">Pending ❌</span>`;
+      : info.thisMonthStatus==="pending"
+      ? `<span style="color:#D43F3F;font-weight:700;">Pending ❌</span>`
+      : `<span style="color:#D6A018;font-weight:700;">Monthly Fee Not Set ⚠️</span>`;
     return `
       <div class="mini-slip">
         <div class="mini-slip-head">
@@ -1769,9 +1778,11 @@ function printReceipt(studentId, record){
   const instAddress = inst.address || "हवा महल, पभेरा (पटना)";
   const instPhone = inst.phone || "9122367624, 9507292656";
   const info = computeStudentDueInfo(studentId);
-  const monthStatusHtml = info.isThisMonthPaid
+  const monthStatusHtml = info.thisMonthStatus==="paid"
     ? `<span style="background:#dff5e6;color:#1B9E5A;padding:3px 10px;border-radius:6px;font-weight:700;">इस महीने की Fee: PAID ✅</span>`
-    : `<span style="background:#fbe1e1;color:#D43F3F;padding:3px 10px;border-radius:6px;font-weight:700;">इस महीने की Fee: PENDING ❌</span>`;
+    : info.thisMonthStatus==="pending"
+    ? `<span style="background:#fbe1e1;color:#D43F3F;padding:3px 10px;border-radius:6px;font-weight:700;">इस महीने की Fee: PENDING ❌</span>`
+    : `<span style="background:#fdf2d6;color:#D6A018;padding:3px 10px;border-radius:6px;font-weight:700;">⚠️ Monthly Fee Set नहीं है — Student Edit करें</span>`;
   $("printArea").innerHTML = `
     <div class="receipt-a4">
       <div class="receipt-head">
